@@ -5,7 +5,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-
+    "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
     "build": "bun build index.ts --outdir ./dist --target bun",
     "seed": "bun run src/utils/seedData.ts",

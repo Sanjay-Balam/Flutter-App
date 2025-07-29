@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import { MenuItemModel } from '../models/MenuItem';
-import { SaleRecordModel } from '../models/SaleRecord';
-import { UserModel } from '../models/User.schema';
+import MenuItemModel from '../models/MenuItem';
+import SaleRecordModel from '../models/SaleRecord';
+import UserModel from '../models/User.schema';
 
 // Model Map for the business sales application
 const modelMap: { [key: string]: mongoose.Model<any> } = {

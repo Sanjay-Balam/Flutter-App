@@ -1,18 +1,7 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import type { MenuItem as IMenuItem } from '../types';
+import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
 import { MenuCategory, ItemSize } from '../types';
 
-export interface MenuItemDocument extends Omit<IMenuItem, 'id'>, Document {
-  _id: string;
-}
-
-const MenuItemSchema = new Schema<MenuItemDocument>({
-  id: {
-    type: String,
-    required: true,
-    unique: true,
-    default: () => new mongoose.Types.ObjectId().toString()
-  },
+const MenuItemSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -52,34 +41,18 @@ const MenuItemSchema = new Schema<MenuItemDocument>({
     index: true
   }
 }, {
-  timestamps: true,
-  toJSON: {
-    transform: function(doc: any, ret: any) {
-      ret.id = ret.id || ret._id.toString();
-      delete ret._id;
-      delete ret.__v;
-      
-      // Convert Map to Object for JSON serialization
-      if (ret.prices instanceof Map) {
-        ret.prices = Object.fromEntries(ret.prices);
-      }
-      
-      return ret;
-    }
-  }
+  timestamps: true
 });
+
+// Generate the type from the schema
+type MenuItemSchemaType = InferSchemaType<typeof MenuItemSchema>;
+
+// Create the interface extending Document and the schema type
+interface IMenuItem extends MenuItemSchemaType, Document { }
 
 // Indexes for better query performance
 MenuItemSchema.index({ category: 1 });
 MenuItemSchema.index({ isAvailable: 1 });
 MenuItemSchema.index({ name: 'text', description: 'text' });
 
-// Pre-save middleware to generate ID if not provided
-MenuItemSchema.pre('save', function(next) {
-  if (!this.id) {
-    this.id = new mongoose.Types.ObjectId().toString();
-  }
-  next();
-});
-
-export const MenuItemModel = mongoose.model<MenuItemDocument>('MenuItem', MenuItemSchema); 
+export default mongoose.model<IMenuItem>('MenuItem', MenuItemSchema); 

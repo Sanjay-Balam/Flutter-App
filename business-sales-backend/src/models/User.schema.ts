@@ -1,34 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
 
-// User interface for TypeScript
-export interface IUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  password: string;
-  role: 'owner' | 'manager' | 'employee';
-  businessName?: string;
-  businessType?: string;
-  isActive: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface UserDocument extends Omit<IUser, 'id'>, Document {
-  _id: string;
-  fullName: string;
-  comparePassword(candidatePassword: string): Promise<boolean>;
-}
-
-const UserSchema = new Schema<UserDocument>({
-  id: {
-    type: String,
-    required: true,
-    unique: true,
-    default: () => new mongoose.Types.ObjectId().toString()
-  },
+const UserSchema = new Schema({
   firstName: {
     type: String,
     required: true,
@@ -94,6 +66,15 @@ const UserSchema = new Schema<UserDocument>({
   }
 });
 
+// Generate the type from the schema
+type UserSchemaType = InferSchemaType<typeof UserSchema>;
+
+// Create the interface extending Document and the schema type
+interface IUser extends UserSchemaType, Document {
+  fullName: string;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
 // Indexes for better query performance
 UserSchema.index({ role: 1 });
 UserSchema.index({ isActive: 1 });
@@ -102,14 +83,6 @@ UserSchema.index({ businessName: 'text', firstName: 'text', lastName: 'text' });
 // Virtual for full name
 UserSchema.virtual('fullName').get(function(this: any) {
   return `${this.firstName} ${this.lastName}`;
-});
-
-// Pre-save middleware to generate ID if not provided
-UserSchema.pre('save', function(next) {
-  if (!this.id) {
-    this.id = new mongoose.Types.ObjectId().toString();
-  }
-  next();
 });
 
 // Pre-save middleware to hash password
@@ -134,4 +107,4 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
   return candidatePassword === this.password;
 };
 
-export const UserModel = mongoose.model<UserDocument>('User', UserSchema);
+export default mongoose.model<IUser>('User', UserSchema);

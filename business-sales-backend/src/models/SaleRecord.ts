@@ -1,18 +1,7 @@
-import mongoose, { Schema, Document } from 'mongoose';
-import type { SaleRecord as ISaleRecord } from '../types';
+import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
 import { MenuCategory, ItemSize } from '../types';
 
-export interface SaleRecordDocument extends Omit<ISaleRecord, 'id'>, Document {
-  _id: string;
-}
-
-const SaleRecordSchema = new Schema<SaleRecordDocument>({
-  id: {
-    type: String,
-    required: true,
-    unique: true,
-    default: () => new mongoose.Types.ObjectId().toString()
-  },
+const SaleRecordSchema = new Schema({
   menuItemId: {
     type: String,
     required: true,
@@ -64,17 +53,15 @@ const SaleRecordSchema = new Schema<SaleRecordDocument>({
     ref: 'User',
     index: true
   }
-}, {
-  timestamps: true,
-  toJSON: {
-    transform: function(doc: any, ret: any) {
-      ret.id = ret.id || ret._id.toString();
-      delete ret._id;
-      delete ret.__v;
-      return ret;
-    }
-  }
+},{
+  timestamps: true
 });
+
+// Generate the type from the schema
+type SaleRecordSchemaType = InferSchemaType<typeof SaleRecordSchema>;
+
+// Create the interface extending Document and the schema type
+interface ISaleRecord extends SaleRecordSchemaType, Document { }
 
 // Indexes for analytics and queries
 SaleRecordSchema.index({ timestamp: -1 }); // Latest sales first
@@ -89,32 +76,4 @@ SaleRecordSchema.index({
   totalAmount: 1 
 });
 
-// Pre-save middleware to calculate totalAmount and generate ID
-SaleRecordSchema.pre('save', function(next) {
-  if (!this.id) {
-    this.id = new mongoose.Types.ObjectId().toString();
-  }
-  
-  // Auto-calculate totalAmount if not provided
-  if (!this.totalAmount || this.totalAmount === 0) {
-    this.totalAmount = this.unitPrice * this.quantity;
-  }
-  
-  next();
-});
-
-// Validation middleware
-SaleRecordSchema.pre('save', function(next) {
-  // Ensure totalAmount matches unitPrice * quantity
-  const calculatedTotal = this.unitPrice * this.quantity;
-  const tolerance = 0.01; // Allow for small floating point differences
-  
-  if (Math.abs(this.totalAmount - calculatedTotal) > tolerance) {
-    const error = new Error('Total amount must equal unit price × quantity');
-    return next(error);
-  }
-  
-  next();
-});
-
-export const SaleRecordModel = mongoose.model<SaleRecordDocument>('SaleRecord', SaleRecordSchema); 
+export default mongoose.model<ISaleRecord>('SaleRecord', SaleRecordSchema); 
