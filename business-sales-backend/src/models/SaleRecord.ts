@@ -3,9 +3,15 @@ import { MenuCategory, ItemSize } from '../types';
 
 const SaleRecordSchema = new Schema({
   menuItemId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     required: true,
-    ref: 'MenuItem'
+    ref: 'MenuItems'
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'Users',
+    index: true
   },
   itemName: {
     type: String,
@@ -46,12 +52,6 @@ const SaleRecordSchema = new Schema({
     type: String,
     trim: true,
     maxlength: 500
-  },
-  userId: {
-    type: String,
-    required: true,
-    ref: 'User',
-    index: true
   }
 },{
   timestamps: true
@@ -76,4 +76,4 @@ SaleRecordSchema.index({
   totalAmount: 1 
 });
 
-export default mongoose.model<ISaleRecord>('SaleRecord', SaleRecordSchema); 
+export default mongoose.model<ISaleRecord>('SaleRecords', SaleRecordSchema); 

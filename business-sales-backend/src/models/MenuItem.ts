@@ -2,6 +2,12 @@ import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
 import { MenuCategory, ItemSize } from '../types';
 
 const MenuItemSchema = new Schema({
+  userId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'Users',
+    index: true
+  },
   name: {
     type: String,
     required: true,
@@ -25,20 +31,9 @@ const MenuItemSchema = new Schema({
       message: 'At least one price must be provided'
     }
   },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 500
-  },
   isAvailable: {
     type: Boolean,
     default: true
-  },
-  userId: {
-    type: String,
-    required: true,
-    ref: 'User',
-    index: true
   }
 }, {
   timestamps: true
@@ -55,4 +50,4 @@ MenuItemSchema.index({ category: 1 });
 MenuItemSchema.index({ isAvailable: 1 });
 MenuItemSchema.index({ name: 'text', description: 'text' });
 
-export default mongoose.model<IMenuItem>('MenuItem', MenuItemSchema); 
+export default mongoose.model<IMenuItem>('MenuItems', MenuItemSchema); 

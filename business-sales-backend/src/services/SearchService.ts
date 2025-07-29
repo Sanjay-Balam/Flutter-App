@@ -383,12 +383,18 @@ const searchService = {
     }
   },
 
-  // Get menu item by custom ID
+  // Get menu item by ID
   getMenuItemById: async (database: string, menuItemId: string) => {
     try {
       const conn = await getDbConnection(database);
       const Model = getModel(conn, "MenuItems");
-      const result = await Model.findOne({ id: menuItemId });
+      
+      // Convert string to ObjectId if valid, otherwise search as string
+      const query = mongoose.Types.ObjectId.isValid(menuItemId) ? 
+        { _id: new mongoose.Types.ObjectId(menuItemId) } : 
+        { _id: menuItemId };
+      
+      const result = await Model.findOne(query);
       if (!result) throw new NotFoundError(`Menu item not found with id: ${menuItemId}`);
       return { success: true, data: result };
     } catch (error: any) {
@@ -409,9 +415,14 @@ const searchService = {
       const pageSize = options?.pageSize || 20;
       const skip = (page - 1) * pageSize;
       
+      // Convert string to ObjectId if valid, otherwise use as string
+      const queryValue = mongoose.Types.ObjectId.isValid(menuItemId) ? 
+        new mongoose.Types.ObjectId(menuItemId) : 
+        menuItemId;
+      
       const [data, total] = await Promise.all([
-        Model.find({ menuItemId }).sort({ timestamp: -1 }).skip(skip).limit(pageSize).lean(),
-        Model.countDocuments({ menuItemId })
+        Model.find({ menuItemId: queryValue }).sort({ timestamp: -1 }).skip(skip).limit(pageSize).lean(),
+        Model.countDocuments({ menuItemId: queryValue })
       ]);
       
       return {
@@ -564,9 +575,9 @@ const searchService = {
       const pipeline = [
         {
           $lookup: {
-            from: 'menuitems',
+            from: 'MenuItems',
             localField: 'menuItemId',
-            foreignField: 'id',
+            foreignField: '_id',
             as: 'menuItemDetails'
           }
         },
