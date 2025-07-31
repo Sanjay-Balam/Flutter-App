@@ -1,0 +1,193 @@
+[{
+    "_id": {
+      "$oid": "688b41cc4066c7dd8979e851"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Milk Malai",
+    "category": "milkCakes",
+    "prices": {
+      "regular": 99
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:13:32.392Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:13:32.392Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b4405e5a53473d3b23749"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Oreo",
+    "category": "milkCakes",
+    "prices": {
+      "regular": 99
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:23:01.423Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:23:01.423Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b4443e5a53473d3b2374b"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Biscoff",
+    "category": "milkCakes",
+    "prices": {
+      "regular": 99
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:24:03.903Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:24:03.903Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b446ae5a53473d3b2374d"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Dairy Milk",
+    "category": "milkCakes",
+    "prices": {
+      "regular": 99
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:24:42.191Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:24:42.191Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b447be5a53473d3b2374f"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Ras Malai",
+    "category": "milkCakes",
+    "prices": {
+      "regular": 99
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:24:59.780Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:24:59.780Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b4489e5a53473d3b23751"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Lotus Biscoff",
+    "category": "cheeseCakes",
+    "prices": {
+      "small": 79,
+      "large": 139
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:25:13.629Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:25:13.629Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b44a4e5a53473d3b23753"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Oreo",
+    "category": "cheeseCakes",
+    "prices": {
+      "small": 79,
+      "large": 139
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:25:40.508Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:25:40.508Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b44b1e5a53473d3b23755"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Blueberry",
+    "category": "cheeseCakes",
+    "prices": {
+      "small": 79,
+      "large": 139
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:25:53.024Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:25:53.024Z"
+    },
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "688b44bde5a53473d3b23757"
+    },
+    "userId": {
+      "$oid": "688722a1574e0612934de3a0"
+    },
+    "name": "Chocolate Brownie",
+    "category": "chocolateBrownie",
+    "prices": {
+      "regular": 149
+    },
+    "isAvailable": true,
+    "createdAt": {
+      "$date": "2025-07-31T10:26:05.775Z"
+    },
+    "updatedAt": {
+      "$date": "2025-07-31T10:26:05.775Z"
+    },
+    "__v": 0
+  }]
+  

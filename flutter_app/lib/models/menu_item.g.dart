@@ -7,7 +7,7 @@ part of 'menu_item.dart';
 // **************************************************************************
 
 MenuItem _$MenuItemFromJson(Map<String, dynamic> json) => MenuItem(
-  id: json['id'] as String,
+  id: json['_id'] as String,
   name: json['name'] as String,
   category: $enumDecode(_$MenuCategoryEnumMap, json['category']),
   prices: (json['prices'] as Map<String, dynamic>).map(
@@ -16,15 +16,25 @@ MenuItem _$MenuItemFromJson(Map<String, dynamic> json) => MenuItem(
   ),
   description: json['description'] as String?,
   isAvailable: json['isAvailable'] as bool? ?? true,
+  userId: json['userId'] as String?,
+  createdAt: json['createdAt'] == null
+      ? null
+      : DateTime.parse(json['createdAt'] as String),
+  updatedAt: json['updatedAt'] == null
+      ? null
+      : DateTime.parse(json['updatedAt'] as String),
 );
 
 Map<String, dynamic> _$MenuItemToJson(MenuItem instance) => <String, dynamic>{
-  'id': instance.id,
+  '_id': instance.id,
   'name': instance.name,
   'category': _$MenuCategoryEnumMap[instance.category]!,
   'prices': instance.prices.map((k, e) => MapEntry(_$ItemSizeEnumMap[k]!, e)),
   'description': instance.description,
   'isAvailable': instance.isAvailable,
+  'userId': instance.userId,
+  'createdAt': instance.createdAt?.toIso8601String(),
+  'updatedAt': instance.updatedAt?.toIso8601String(),
 };
 
 const _$MenuCategoryEnumMap = {

@@ -39,11 +39,23 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
   Widget build(BuildContext context) {
     final categories = ref.watch(menuCategoriesProvider);
     final todaysRevenue = ref.watch(todaysRevenueProvider);
+    final menuItemsAsync = ref.watch(menuItemsProvider);
+    final isLoading = ref.watch(isMenuItemsLoadingProvider);
+    final error = ref.watch(menuItemsErrorProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu'),
         centerTitle: true,
+        actions: [
+          // Refresh button
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: isLoading
+                ? null
+                : () => ref.read(menuItemsProvider.notifier).refresh(),
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: categories.map((category) {
@@ -102,42 +114,135 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
               ],
             ),
           ),
+
+          // Loading indicator
+          if (isLoading && !menuItemsAsync.hasValue)
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Loading menu items...'),
+                  ],
+                ),
+              ),
+            )
+          // Error state
+          else if (error != null && !menuItemsAsync.hasValue)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load menu items',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () =>
+                          ref.read(menuItemsProvider.notifier).refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           // Menu Items Tabs
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: categories.map((category) {
-                return _buildCategoryView(category);
-              }).toList(),
+          else
+            Expanded(
+              child: Stack(
+                children: [
+                  TabBarView(
+                    controller: _tabController,
+                    children: categories.map((category) {
+                      return _buildCategoryView(category);
+                    }).toList(),
+                  ),
+                  // Loading overlay when refreshing
+                  if (isLoading && menuItemsAsync.hasValue)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 3,
+                        child: const LinearProgressIndicator(),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildCategoryView(MenuCategory category) {
-    final categoryItems = ref.watch(menuItemsByCategoryProvider(category));
+    final categoryItemsAsync = ref.watch(menuItemsByCategoryProvider(category));
 
-    if (categoryItems.isEmpty) {
-      return const Center(
-        child: Text(
-          'No items available in this category',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-      );
-    }
+    return categoryItemsAsync.when(
+      data: (categoryItems) {
+        if (categoryItems.isEmpty) {
+          return const Center(
+            child: Text(
+              'No items available in this category',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: categoryItems.length,
-      itemBuilder: (context, index) {
-        final item = categoryItems[index];
-        return MenuItemCard(
-          menuItem: item,
-          onSell: () => _showSellDialog(item),
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: categoryItems.length,
+          itemBuilder: (context, index) {
+            final item = categoryItems[index];
+            return MenuItemCard(
+              menuItem: item,
+              onSell: () => _showSellDialog(item),
+            );
+          },
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading ${category.displayName}',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => ref.read(menuItemsProvider.notifier).refresh(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

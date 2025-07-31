@@ -3,7 +3,7 @@ import searchService from '../services/SearchService';
 
 export const searchRoutes = new Elysia({ prefix: '' })
   // POST /search/:database/:tableName - Advanced search with aggregation
-  .post('/:database/:tableName', async ({ params, body, query }) => {
+  .post('/:database/searchresource/:tableName', async ({ params, body, query }) => {
     const { database, tableName } = params;
     const options = {
       page: query.page ? parseInt(query.page as string) : undefined,
@@ -32,7 +32,7 @@ export const searchRoutes = new Elysia({ prefix: '' })
   })
 
   // GET /search/:database/:tableName/:id - Get single resource
-  .get('/:database/:tableName/:id', async ({ params }) => {
+  .get('/:database/searchresource/:tableName/:id', async ({ params }) => {
     const { database, tableName, id } = params;
     return await searchService.getResource(database, tableName, { id });
   }, {

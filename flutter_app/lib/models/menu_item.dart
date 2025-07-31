@@ -8,12 +8,16 @@ enum ItemSize { small, large, regular }
 
 @JsonSerializable()
 class MenuItem {
+  @JsonKey(name: '_id')
   final String id;
   final String name;
   final MenuCategory category;
   final Map<ItemSize, double> prices; // Size -> Price mapping
   final String? description;
   final bool isAvailable;
+  final String? userId; // Backend userId field
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const MenuItem({
     required this.id,
@@ -22,10 +26,41 @@ class MenuItem {
     required this.prices,
     this.description,
     this.isAvailable = true,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory MenuItem.fromJson(Map<String, dynamic> json) =>
-      _$MenuItemFromJson(json);
+  factory MenuItem.fromJson(Map<String, dynamic> json) {
+    // Handle the backend response format
+    Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
+    
+    // Convert MongoDB _id to id
+    if (processedJson.containsKey('_id') && processedJson['_id'] is Map) {
+      processedJson['_id'] = processedJson['_id']['\$oid'];
+    }
+    
+    // Convert userId ObjectId to string
+    if (processedJson.containsKey('userId') && processedJson['userId'] is Map) {
+      processedJson['userId'] = processedJson['userId']['\$oid'];
+    }
+    
+    // Convert date strings to DateTime
+    if (processedJson.containsKey('createdAt')) {
+      if (processedJson['createdAt'] is Map && processedJson['createdAt'].containsKey('\$date')) {
+        processedJson['createdAt'] = processedJson['createdAt']['\$date'];
+      }
+    }
+    
+    if (processedJson.containsKey('updatedAt')) {
+      if (processedJson['updatedAt'] is Map && processedJson['updatedAt'].containsKey('\$date')) {
+        processedJson['updatedAt'] = processedJson['updatedAt']['\$date'];
+      }
+    }
+    
+    return _$MenuItemFromJson(processedJson);
+  }
+  
   Map<String, dynamic> toJson() => _$MenuItemToJson(this);
 
   // Helper method to get price by size
