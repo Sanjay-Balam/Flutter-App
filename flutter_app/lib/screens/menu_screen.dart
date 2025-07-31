@@ -6,6 +6,7 @@ import '../providers/menu_provider.dart';
 import '../providers/sales_provider.dart';
 import '../widgets/menu_item_card.dart';
 import '../widgets/sell_dialog.dart';
+import '../widgets/menu_item_form_dialog.dart';
 
 class MenuScreen extends ConsumerStatefulWidget {
   const MenuScreen({super.key});
@@ -189,6 +190,12 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
             ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showCreateDialog(),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Item'),
+        tooltip: 'Add new menu item',
+      ),
     );
   }
 
@@ -273,6 +280,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
           );
         },
       ),
+    );
+  }
+
+  void _showCreateDialog() {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          const MenuItemFormDialog(dialogTitle: 'Create New Menu Item'),
     );
   }
 }

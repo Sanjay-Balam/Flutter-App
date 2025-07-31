@@ -68,6 +68,26 @@ export const searchRoutes = new Elysia({ prefix: '' })
     body: t.Any()
   })
 
+  // PATCH /:database/updateresource/:tableName/:id - Update resource (alternative method)
+  .patch('/:database/updateresource/:tableName/:id', async ({ params, body }) => {
+    const { database, tableName, id } = params;
+    console.log("PATCH update body", body, params);
+    try {
+      const result = await searchService.updateResource(database, tableName, { id }, body);
+      return result;
+    } catch (error: any) {
+      console.error("PATCH update error:", error);
+      return { success: false, error: error.message || "Failed to update resource" };
+    }
+  }, {
+    params: t.Object({
+      database: t.String(),
+      tableName: t.String(),
+      id: t.String()
+    }),
+    body: t.Any()
+  })
+
   // DELETE /search/:database/:tableName/:id - Delete resource
   .delete('/:database/deleteresource/:tableName/:id', async ({ params }) => {
     const { database, tableName, id } = params;

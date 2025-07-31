@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/menu_item.dart';
+import 'menu_item_form_dialog.dart';
+import 'delete_menu_item_dialog.dart';
 
 class MenuItemCard extends StatelessWidget {
   final MenuItem menuItem;
   final VoidCallback onSell;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const MenuItemCard({super.key, required this.menuItem, required this.onSell});
+  const MenuItemCard({
+    super.key,
+    required this.menuItem,
+    required this.onSell,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -52,17 +62,54 @@ class MenuItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Category icon
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    menuItem.category.icon,
-                    style: const TextStyle(fontSize: 24),
-                  ),
+                // Category icon and menu
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        menuItem.category.icon,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                    ),
+                    // More menu button
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      tooltip: 'More options',
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'edit':
+                            _showEditDialog(context);
+                            break;
+                          case 'delete':
+                            _showDeleteDialog(context);
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: ListTile(
+                            leading: Icon(Icons.edit, color: Colors.blue),
+                            title: Text('Edit'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: ListTile(
+                            leading: Icon(Icons.delete, color: Colors.red),
+                            title: Text('Delete'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -204,5 +251,20 @@ class MenuItemCard extends StatelessWidget {
         ],
       );
     }
+  }
+
+  void _showEditDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          MenuItemFormDialog(dialogTitle: 'Edit Menu Item', menuItem: menuItem),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => DeleteMenuItemDialog(menuItem: menuItem),
+    );
   }
 }
