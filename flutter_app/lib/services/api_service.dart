@@ -104,7 +104,7 @@ class ApiService {
   Future<MenuItem?> getMenuItemById(String itemId) async {
     try {
       final url = Uri.parse(
-        '${AppConfig.baseUrl}/${AppConfig.database}/getresource/MenuItems/$itemId',
+        '${AppConfig.baseUrl}/${AppConfig.database}/searchresource/MenuItems/$itemId',
       );
 
       final response = await _client.get(url, headers: _headers);
