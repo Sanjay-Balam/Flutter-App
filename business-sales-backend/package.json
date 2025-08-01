@@ -4,9 +4,14 @@
   "description": "Backend API for Business Sales Tracker Flutter App",
   "module": "index.ts",
   "type": "module",
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
+    "start:node": "node --loader tsx index.ts",
     "build": "bun build index.ts --outdir ./dist --target bun",
     "seed": "bun run src/utils/seedData.ts",
     "type-check": "tsc --noEmit",
@@ -26,7 +31,8 @@
   "author": "Sanjay Balam",
   "license": "MIT",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "tsx": "^4.6.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

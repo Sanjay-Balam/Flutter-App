@@ -109,12 +109,12 @@ const app = new Elysia()
     };
   });
 
-const port = process.env.PORT || 3000;
+const port = parseInt(process.env.PORT || '3000');
 
 app.listen(port, () => {
-  console.log(`🚀 Business Sales Tracker API is running on http://localhost:${port}`);
-  console.log(`📚 API Documentation available at http://localhost:${port}/swagger`);
-  console.log(`🏥 Health check available at http://localhost:${port}/health`);
+  console.log(`🚀 Business Sales Tracker API is running on port ${port}`);
+  console.log(`📚 API Documentation available at /swagger`);
+  console.log(`🏥 Health check available at /health`);
   console.log(`📊 Database status: ${Database.getConnectionStatus() ? '✅ Connected' : '❌ Disconnected'}`);
 });
 
