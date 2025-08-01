@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/sale_record.dart';
 import '../models/menu_item.dart';
+import '../config/app_config.dart';
 
 class SalesApiService {
-  static const String baseUrl = 'http://localhost:3000';
-  static const String database = 'DemoDB';
-
   // Singleton pattern
   static final SalesApiService _instance = SalesApiService._internal();
   factory SalesApiService() => _instance;
@@ -15,11 +13,8 @@ class SalesApiService {
   // HTTP client
   final http.Client _client = http.Client();
 
-  // Headers for API requests
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  // Headers for API requests - using centralized config
+  Map<String, String> get _headers => AppConfig.defaultHeaders;
 
   /// Create a new sale record
   Future<SaleRecord> createSale({
@@ -30,7 +25,7 @@ class SalesApiService {
     String? notes,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/createresource/SaleRecords');
+      final url = Uri.parse(AppConfig.createResourceEndpoint('SaleRecords'));
 
       final unitPrice = menuItem.getPriceBySize(size);
       final totalAmount = unitPrice * quantity;
@@ -76,7 +71,7 @@ class SalesApiService {
   /// Fetch all sales for a specific user
   Future<List<SaleRecord>> getSalesByUserId(String userId) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/searchresource/SaleRecords');
+      final url = Uri.parse(AppConfig.searchResourceEndpoint('SaleRecords'));
 
       final requestBody = {
         'filter': {'userId': userId},
@@ -119,7 +114,7 @@ class SalesApiService {
     required DateTime endDate,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/searchresource/SaleRecords');
+      final url = Uri.parse(AppConfig.searchResourceEndpoint('SaleRecords'));
 
       final requestBody = {
         'filter': {
@@ -211,7 +206,7 @@ class SalesApiService {
     required String menuItemId,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/searchresource/SaleRecords');
+      final url = Uri.parse(AppConfig.searchResourceEndpoint('SaleRecords'));
 
       final requestBody = {
         'filter': {'userId': userId, 'menuItemId': menuItemId},
@@ -249,7 +244,7 @@ class SalesApiService {
   Future<bool> deleteSale(String saleId) async {
     try {
       final url = Uri.parse(
-        '$baseUrl/$database/deleteresource/SaleRecords/$saleId',
+        AppConfig.deleteResourceEndpoint('SaleRecords', saleId),
       );
 
       final response = await _client.delete(url, headers: _headers);

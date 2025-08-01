@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/app_config.dart';
 
 // Current user ID provider (atom-like state)
-// Using the userId from your MenuItems data: 688722a1574e0612934de3a0
+// Using the default userId from centralized configuration
 final currentUserIdProvider = StateProvider<String?>((ref) {
-  // You can initialize this with your actual user ID
+  // Initialize with default user ID from config
   // In a real app, this would come from authentication
-  return '688722a1574e0612934de3a0';
+  return AppConfig.defaultUserId;
 });
 
 // User authentication state provider

@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/menu_item.dart';
+import '../config/app_config.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000';
-  static const String database = 'DemoDB';
-
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
@@ -14,16 +12,13 @@ class ApiService {
   // HTTP client
   final http.Client _client = http.Client();
 
-  // Headers for API requests
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  // Headers for API requests - using centralized config
+  Map<String, String> get _headers => AppConfig.defaultHeaders;
 
   /// Fetch all menu items for a specific user
   Future<List<MenuItem>> getMenuItemsByUserId(String userId) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/searchresource/MenuItems');
+      final url = Uri.parse(AppConfig.searchResourceEndpoint('MenuItems'));
 
       // Create search body to filter by userId
       final requestBody = {
@@ -67,7 +62,7 @@ class ApiService {
     MenuCategory category,
   ) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/searchresource/MenuItems');
+      final url = Uri.parse(AppConfig.searchResourceEndpoint('MenuItems'));
 
       final requestBody = {
         'filter': {
@@ -108,7 +103,9 @@ class ApiService {
   /// Get a single menu item by ID
   Future<MenuItem?> getMenuItemById(String itemId) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/getresource/MenuItems/$itemId');
+      final url = Uri.parse(
+        '${AppConfig.baseUrl}/${AppConfig.database}/getresource/MenuItems/$itemId',
+      );
 
       final response = await _client.get(url, headers: _headers);
 
@@ -132,7 +129,7 @@ class ApiService {
   /// Create a new menu item
   Future<MenuItem> createMenuItem(MenuItem menuItem) async {
     try {
-      final url = Uri.parse('$baseUrl/$database/createresource/MenuItems');
+      final url = Uri.parse(AppConfig.createResourceEndpoint('MenuItems'));
 
       final requestBody = menuItem.toJson();
       // Remove id field for creation as backend generates _id
@@ -166,7 +163,7 @@ class ApiService {
   Future<MenuItem> updateMenuItem(String itemId, MenuItem menuItem) async {
     try {
       final url = Uri.parse(
-        '$baseUrl/$database/updateresource/MenuItems/$itemId',
+        AppConfig.updateResourceEndpoint('MenuItems', itemId),
       );
 
       final requestBody = menuItem.toJson();
@@ -203,7 +200,7 @@ class ApiService {
   Future<bool> deleteMenuItem(String itemId) async {
     try {
       final url = Uri.parse(
-        '$baseUrl/$database/deleteresource/MenuItems/$itemId',
+        AppConfig.deleteResourceEndpoint('MenuItems', itemId),
       );
 
       final response = await _client.delete(url, headers: _headers);
