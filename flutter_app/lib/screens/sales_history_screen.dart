@@ -10,7 +10,7 @@ class SalesHistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allSales = ref.watch(salesRepositoryProvider).allSales;
+    final salesAsync = ref.watch(salesProvider);
     final todaysRevenue = ref.watch(todaysRevenueProvider);
     final currencyFormatter = NumberFormat.currency(
       symbol: '₹',
@@ -18,78 +18,118 @@ class SalesHistoryScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales History'), centerTitle: true),
-      body: Column(
-        children: [
-          // Summary Card
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildSummaryItem(
-                      'Today\'s Sales',
-                      '${allSales.where((sale) => sale.isToday()).length}',
-                      Icons.today,
-                    ),
-                    Container(
-                      height: 40,
-                      width: 1,
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                    _buildSummaryItem(
-                      'Today\'s Revenue',
-                      currencyFormatter.format(todaysRevenue),
-                      Icons.attach_money,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // Sales List
-          Expanded(
-            child: allSales.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: allSales.length,
-                    itemBuilder: (context, index) {
-                      final sale =
-                          allSales[allSales.length -
-                              1 -
-                              index]; // Reverse order
-                      return _buildSaleCard(
-                        context,
-                        sale,
-                        currencyFormatter,
-                        ref,
-                      );
-                    },
-                  ),
+      appBar: AppBar(
+        title: const Text('Sales History'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(salesProvider.notifier).refresh();
+            },
           ),
         ],
+      ),
+      body: salesAsync.when(
+        data: (allSales) => Column(
+          children: [
+            // Summary Card
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildSummaryItem(
+                        'Today\'s Sales',
+                        '${allSales.where((sale) => sale.isToday()).length}',
+                        Icons.today,
+                      ),
+                      Container(
+                        height: 40,
+                        width: 1,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      _buildSummaryItem(
+                        'Today\'s Revenue',
+                        currencyFormatter.format(todaysRevenue),
+                        Icons.attach_money,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Sales List
+            Expanded(
+              child: allSales.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: allSales.length,
+                      itemBuilder: (context, index) {
+                        final sale =
+                            allSales[allSales.length -
+                                1 -
+                                index]; // Reverse order
+                        return _buildSaleCard(
+                          context,
+                          sale,
+                          currencyFormatter,
+                          ref,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+              const SizedBox(height: 16),
+              Text(
+                'Failed to load sales',
+                style: TextStyle(fontSize: 18, color: Colors.red[700]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(salesProvider.notifier).refresh();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -314,15 +354,31 @@ class SalesHistoryScreen extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              ref.read(salesRepositoryProvider.notifier).removeSale(sale.id);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sale deleted successfully'),
-                  backgroundColor: Colors.red,
-                ),
-              );
+            onPressed: () async {
+              try {
+                await ref.read(salesProvider.notifier).removeSale(sale.id);
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Sale deleted successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (error) {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '❌ Failed to delete sale: ${error.toString()}',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),

@@ -16,6 +16,7 @@ class SellDialog extends StatefulWidget {
 class _SellDialogState extends State<SellDialog> {
   late ItemSize selectedSize;
   int quantity = 1;
+  bool _isProcessingSale = false;
   final TextEditingController notesController = TextEditingController();
   final TextEditingController quantityController = TextEditingController(
     text: '1',
@@ -273,18 +274,22 @@ class _SellDialogState extends State<SellDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            widget.onSell(
-                              selectedSize,
-                              quantity,
-                              notesController.text.trim().isEmpty
-                                  ? null
-                                  : notesController.text.trim(),
-                            );
-                            Navigator.of(context).pop();
-                          },
-                          icon: const Icon(Icons.shopping_cart),
-                          label: const Text('Sell'),
+                          onPressed: _isProcessingSale ? null : _handleSell,
+                          icon: _isProcessingSale
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(Icons.shopping_cart),
+                          label: Text(
+                            _isProcessingSale ? 'Processing...' : 'Sell',
+                          ),
                         ),
                       ),
                     ],
@@ -296,5 +301,33 @@ class _SellDialogState extends State<SellDialog> {
         ),
       ),
     );
+  }
+
+  void _handleSell() async {
+    setState(() {
+      _isProcessingSale = true;
+    });
+
+    try {
+      await widget.onSell(
+        selectedSize,
+        quantity,
+        notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      // Error is handled in the parent (menu_screen.dart)
+      // Just reset the loading state
+      if (mounted) {
+        setState(() {
+          _isProcessingSale = false;
+        });
+      }
+    }
   }
 }

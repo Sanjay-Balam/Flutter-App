@@ -258,26 +258,41 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
       context: context,
       builder: (context) => SellDialog(
         menuItem: menuItem,
-        onSell: (size, quantity, notes) {
-          ref
-              .read(salesRepositoryProvider.notifier)
-              .addSale(
-                menuItem: menuItem,
-                size: size,
-                quantity: quantity,
-                notes: notes,
-              );
+        onSell: (size, quantity, notes) async {
+          try {
+            await ref
+                .read(salesProvider.notifier)
+                .addSale(
+                  menuItem: menuItem,
+                  size: size,
+                  quantity: quantity,
+                  notes: notes,
+                );
 
-          // Show success snackbar
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Sold ${quantity}x ${menuItem.name} (${size.displayName})',
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+            // Show success snackbar
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '✅ Sold ${quantity}x ${menuItem.name} (${size.displayName}) - ₹${(menuItem.getPriceBySize(size) * quantity).toInt()}',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          } catch (error) {
+            // Show error snackbar
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ Failed to record sale: ${error.toString()}'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
+          }
         },
       ),
     );

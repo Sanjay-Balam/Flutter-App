@@ -1,153 +1,213 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../models/sale_record.dart';
 import '../models/menu_item.dart';
+import '../services/sales_api_service.dart';
+import 'user_provider.dart';
 
-const _uuid = Uuid();
+// Sales API Service provider
+final salesApiServiceProvider = Provider<SalesApiService>((ref) {
+  return SalesApiService();
+});
 
-// Sales Repository - manages all sales data
-class SalesRepository {
-  List<SaleRecord> _sales = [];
+// Sales state notifier for efficient state management
+class SalesNotifier extends AsyncNotifier<List<SaleRecord>> {
+  SalesApiService get _salesApiService => ref.read(salesApiServiceProvider);
 
-  List<SaleRecord> get allSales => List.unmodifiable(_sales);
+  @override
+  Future<List<SaleRecord>> build() async {
+    // Get current user ID
+    final userId = ref.watch(requireUserIdProvider);
 
-  void addSale(SaleRecord sale) {
-    _sales.add(sale);
+    // Fetch sales from API
+    return await _salesApiService.getSalesByUserId(userId);
   }
 
-  void removeSale(String saleId) {
-    _sales.removeWhere((sale) => sale.id == saleId);
-  }
-
-  List<SaleRecord> getSalesByDate(DateTime date) {
-    return _sales.where((sale) {
-      return sale.timestamp.year == date.year &&
-          sale.timestamp.month == date.month &&
-          sale.timestamp.day == date.day;
-    }).toList();
-  }
-
-  List<SaleRecord> getSalesByDateRange(DateTime start, DateTime end) {
-    return _sales.where((sale) {
-      return sale.timestamp.isAfter(start.subtract(const Duration(days: 1))) &&
-          sale.timestamp.isBefore(end.add(const Duration(days: 1)));
-    }).toList();
-  }
-
-  double getTotalRevenue() {
-    return _sales.fold(0.0, (sum, sale) => sum + sale.totalAmount);
-  }
-
-  double getTotalRevenueByDate(DateTime date) {
-    return getSalesByDate(
-      date,
-    ).fold(0.0, (sum, sale) => sum + sale.totalAmount);
-  }
-
-  double getTotalRevenueByDateRange(DateTime start, DateTime end) {
-    return getSalesByDateRange(
-      start,
-      end,
-    ).fold(0.0, (sum, sale) => sum + sale.totalAmount);
-  }
-
-  Map<String, int> getItemSalesCount() {
-    final Map<String, int> itemCounts = {};
-    for (final sale in _sales) {
-      itemCounts[sale.itemName] =
-          (itemCounts[sale.itemName] ?? 0) + sale.quantity;
+  // Refresh sales
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    try {
+      final userId = ref.read(requireUserIdProvider);
+      final sales = await _salesApiService.getSalesByUserId(userId);
+      state = AsyncValue.data(sales);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
     }
-    return itemCounts;
   }
-}
-
-// Main sales repository provider
-final salesRepositoryProvider =
-    StateNotifierProvider<SalesNotifier, SalesRepository>((ref) {
-      return SalesNotifier();
-    });
-
-class SalesNotifier extends StateNotifier<SalesRepository> {
-  SalesNotifier() : super(SalesRepository());
 
   // Add a new sale
-  void addSale({
+  Future<void> addSale({
     required MenuItem menuItem,
     required ItemSize size,
     required int quantity,
     String? notes,
-  }) {
-    final sale = SaleRecord.fromMenuItem(
-      id: _uuid.v4(),
-      menuItem: menuItem,
-      size: size,
-      quantity: quantity,
-      timestamp: DateTime.now(),
-      notes: notes,
-    );
+  }) async {
+    try {
+      final userId = ref.read(requireUserIdProvider);
 
-    state.addSale(sale);
-    // Trigger rebuild by creating new state
-    state = SalesRepository().._sales = List.from(state.allSales);
+      final newSale = await _salesApiService.createSale(
+        menuItem: menuItem,
+        size: size,
+        quantity: quantity,
+        userId: userId,
+        notes: notes,
+      );
+
+      // Update state optimistically
+      state.whenData((currentSales) {
+        state = AsyncValue.data([newSale, ...currentSales]);
+      });
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 
   // Remove a sale
-  void removeSale(String saleId) {
-    state.removeSale(saleId);
-    state = SalesRepository().._sales = List.from(state.allSales);
+  Future<void> removeSale(String saleId) async {
+    try {
+      await _salesApiService.deleteSale(saleId);
+
+      // Update state optimistically
+      state.whenData((currentSales) {
+        final updatedSales = currentSales
+            .where((sale) => sale.id != saleId)
+            .toList();
+        state = AsyncValue.data(updatedSales);
+      });
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
   }
 }
+
+// Main sales provider (async)
+final salesProvider = AsyncNotifierProvider<SalesNotifier, List<SaleRecord>>(
+  () {
+    return SalesNotifier();
+  },
+);
+
+// Legacy provider for backward compatibility
+final salesRepositoryProvider = Provider<AsyncValue<List<SaleRecord>>>((ref) {
+  return ref.watch(salesProvider);
+});
 
 // Derived providers (Atomic approach - each provider focuses on specific data)
 
 // Today's sales
-final todaysSalesProvider = Provider<List<SaleRecord>>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  final today = DateTime.now();
-  return salesRepo.getSalesByDate(today);
+final todaysSalesProvider = Provider<AsyncValue<List<SaleRecord>>>((ref) {
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) {
+      final today = DateTime.now();
+      final todaysSales = sales.where((sale) {
+        return sale.timestamp.year == today.year &&
+            sale.timestamp.month == today.month &&
+            sale.timestamp.day == today.day;
+      }).toList();
+      return AsyncValue.data(todaysSales);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+  );
 });
 
 // Today's revenue
 final todaysRevenueProvider = Provider<double>((ref) {
-  final todaysSales = ref.watch(todaysSalesProvider);
-  return todaysSales.fold(0.0, (sum, sale) => sum + sale.totalAmount);
+  final todaysSalesAsync = ref.watch(todaysSalesProvider);
+  return todaysSalesAsync.when(
+    data: (todaysSales) =>
+        todaysSales.fold(0.0, (sum, sale) => sum + sale.totalAmount),
+    loading: () => 0.0,
+    error: (error, stackTrace) => 0.0,
+  );
 });
 
 // This week's sales
-final thisWeekSalesProvider = Provider<List<SaleRecord>>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  final now = DateTime.now();
-  final weekStart = now.subtract(Duration(days: now.weekday - 1));
-  final weekEnd = weekStart.add(const Duration(days: 6));
-  return salesRepo.getSalesByDateRange(weekStart, weekEnd);
+final thisWeekSalesProvider = Provider<AsyncValue<List<SaleRecord>>>((ref) {
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) {
+      final now = DateTime.now();
+      final weekStart = now.subtract(Duration(days: now.weekday - 1));
+      final weekEnd = weekStart.add(const Duration(days: 6));
+      final thisWeekSales = sales.where((sale) {
+        return sale.timestamp.isAfter(
+              weekStart.subtract(const Duration(days: 1)),
+            ) &&
+            sale.timestamp.isBefore(weekEnd.add(const Duration(days: 1)));
+      }).toList();
+      return AsyncValue.data(thisWeekSales);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+  );
 });
 
 // This month's sales
-final thisMonthSalesProvider = Provider<List<SaleRecord>>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  final now = DateTime.now();
-  final monthStart = DateTime(now.year, now.month, 1);
-  final monthEnd = DateTime(now.year, now.month + 1, 0);
-  return salesRepo.getSalesByDateRange(monthStart, monthEnd);
+final thisMonthSalesProvider = Provider<AsyncValue<List<SaleRecord>>>((ref) {
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) {
+      final now = DateTime.now();
+      final monthStart = DateTime(now.year, now.month, 1);
+      final monthEnd = DateTime(now.year, now.month + 1, 0);
+      final thisMonthSales = sales.where((sale) {
+        return sale.timestamp.isAfter(
+              monthStart.subtract(const Duration(days: 1)),
+            ) &&
+            sale.timestamp.isBefore(monthEnd.add(const Duration(days: 1)));
+      }).toList();
+      return AsyncValue.data(thisMonthSales);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+  );
 });
 
 // This year's sales
-final thisYearSalesProvider = Provider<List<SaleRecord>>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  final now = DateTime.now();
-  final yearStart = DateTime(now.year, 1, 1);
-  final yearEnd = DateTime(now.year, 12, 31);
-  return salesRepo.getSalesByDateRange(yearStart, yearEnd);
+final thisYearSalesProvider = Provider<AsyncValue<List<SaleRecord>>>((ref) {
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) {
+      final now = DateTime.now();
+      final yearStart = DateTime(now.year, 1, 1);
+      final yearEnd = DateTime(now.year, 12, 31);
+      final thisYearSales = sales.where((sale) {
+        return sale.timestamp.isAfter(
+              yearStart.subtract(const Duration(days: 1)),
+            ) &&
+            sale.timestamp.isBefore(yearEnd.add(const Duration(days: 1)));
+      }).toList();
+      return AsyncValue.data(thisYearSales);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+  );
 });
 
 // Top selling items
-final topSellingItemsProvider = Provider<Map<String, int>>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  return salesRepo.getItemSalesCount();
+final topSellingItemsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) {
+      final Map<String, int> itemCounts = {};
+      for (final sale in sales) {
+        itemCounts[sale.itemName] =
+            (itemCounts[sale.itemName] ?? 0) + sale.quantity;
+      }
+      return AsyncValue.data(itemCounts);
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+  );
 });
 
 // Total revenue
 final totalRevenueProvider = Provider<double>((ref) {
-  final salesRepo = ref.watch(salesRepositoryProvider);
-  return salesRepo.getTotalRevenue();
+  final salesAsync = ref.watch(salesProvider);
+  return salesAsync.when(
+    data: (sales) => sales.fold(0.0, (sum, sale) => sum + sale.totalAmount),
+    loading: () => 0.0,
+    error: (error, stackTrace) => 0.0,
+  );
 });

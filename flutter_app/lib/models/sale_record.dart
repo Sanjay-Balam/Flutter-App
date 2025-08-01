@@ -5,6 +5,7 @@ part 'sale_record.g.dart';
 
 @JsonSerializable()
 class SaleRecord {
+  @JsonKey(name: '_id')
   final String id;
   final String menuItemId;
   final String itemName;
@@ -15,6 +16,9 @@ class SaleRecord {
   final double totalAmount;
   final DateTime timestamp;
   final String? notes;
+  final String? userId; // Backend userId field
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   const SaleRecord({
     required this.id,
@@ -27,13 +31,59 @@ class SaleRecord {
     required this.totalAmount,
     required this.timestamp,
     this.notes,
+    this.userId,
+    this.createdAt,
+    this.updatedAt,
   });
 
-  factory SaleRecord.fromJson(Map<String, dynamic> json) =>
-      _$SaleRecordFromJson(json);
+  factory SaleRecord.fromJson(Map<String, dynamic> json) {
+    // Handle the backend response format
+    Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
+
+    // Convert MongoDB _id to id
+    if (processedJson.containsKey('_id') && processedJson['_id'] is Map) {
+      processedJson['_id'] = processedJson['_id']['\$oid'];
+    }
+
+    // Convert menuItemId ObjectId to string
+    if (processedJson.containsKey('menuItemId') &&
+        processedJson['menuItemId'] is Map) {
+      processedJson['menuItemId'] = processedJson['menuItemId']['\$oid'];
+    }
+
+    // Convert userId ObjectId to string
+    if (processedJson.containsKey('userId') && processedJson['userId'] is Map) {
+      processedJson['userId'] = processedJson['userId']['\$oid'];
+    }
+
+    // Convert date strings to DateTime
+    if (processedJson.containsKey('timestamp')) {
+      if (processedJson['timestamp'] is Map &&
+          processedJson['timestamp'].containsKey('\$date')) {
+        processedJson['timestamp'] = processedJson['timestamp']['\$date'];
+      }
+    }
+
+    if (processedJson.containsKey('createdAt')) {
+      if (processedJson['createdAt'] is Map &&
+          processedJson['createdAt'].containsKey('\$date')) {
+        processedJson['createdAt'] = processedJson['createdAt']['\$date'];
+      }
+    }
+
+    if (processedJson.containsKey('updatedAt')) {
+      if (processedJson['updatedAt'] is Map &&
+          processedJson['updatedAt'].containsKey('\$date')) {
+        processedJson['updatedAt'] = processedJson['updatedAt']['\$date'];
+      }
+    }
+
+    return _$SaleRecordFromJson(processedJson);
+  }
+
   Map<String, dynamic> toJson() => _$SaleRecordToJson(this);
 
-  // Factory constructor to create a sale record from menu item
+  // Factory constructor to create a sale record from menu item for API submission
   factory SaleRecord.fromMenuItem({
     required String id,
     required MenuItem menuItem,
@@ -41,6 +91,7 @@ class SaleRecord {
     required int quantity,
     required DateTime timestamp,
     String? notes,
+    String? userId,
   }) {
     final unitPrice = menuItem.getPriceBySize(size);
     final totalAmount = unitPrice * quantity;
@@ -56,6 +107,7 @@ class SaleRecord {
       totalAmount: totalAmount,
       timestamp: timestamp,
       notes: notes,
+      userId: userId,
     );
   }
 

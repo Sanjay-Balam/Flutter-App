@@ -32,19 +32,41 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
   @override
   Widget build(BuildContext context) {
     final todaysRevenue = ref.watch(todaysRevenueProvider);
-    final thisWeekSales = ref.watch(thisWeekSalesProvider);
-    final thisMonthSales = ref.watch(thisMonthSalesProvider);
-    final thisYearSales = ref.watch(thisYearSalesProvider);
-    final topSellingItems = ref.watch(topSellingItemsProvider);
+    final thisWeekSalesAsync = ref.watch(thisWeekSalesProvider);
+    final thisMonthSalesAsync = ref.watch(thisMonthSalesProvider);
+    final thisYearSalesAsync = ref.watch(thisYearSalesProvider);
+    final topSellingItemsAsync = ref.watch(topSellingItemsProvider);
     final currencyFormatter = NumberFormat.currency(
       symbol: '₹',
       decimalDigits: 0,
     );
 
+    // Check if any data is loading
+    final isLoading =
+        thisWeekSalesAsync.isLoading ||
+        thisMonthSalesAsync.isLoading ||
+        thisYearSalesAsync.isLoading ||
+        topSellingItemsAsync.isLoading;
+
+    // Check if any data has error
+    final hasError =
+        thisWeekSalesAsync.hasError ||
+        thisMonthSalesAsync.hasError ||
+        thisYearSalesAsync.hasError ||
+        topSellingItemsAsync.hasError;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Analytics'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.read(salesProvider.notifier).refresh();
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -57,23 +79,59 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
           unselectedLabelColor: Colors.white70,
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : hasError
+          ? _buildErrorState()
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildOverviewTab(
+                  currencyFormatter,
+                  todaysRevenue,
+                  thisWeekSalesAsync.value ?? [],
+                  thisMonthSalesAsync.value ?? [],
+                  thisYearSalesAsync.value ?? [],
+                  topSellingItemsAsync.value ?? {},
+                ),
+                _buildChartsTab(
+                  thisWeekSalesAsync.value ?? [],
+                  thisMonthSalesAsync.value ?? [],
+                ),
+                _buildReportsTab(
+                  currencyFormatter,
+                  thisWeekSalesAsync.value ?? [],
+                  thisMonthSalesAsync.value ?? [],
+                  thisYearSalesAsync.value ?? [],
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _buildOverviewTab(
-            currencyFormatter,
-            todaysRevenue,
-            thisWeekSales,
-            thisMonthSales,
-            thisYearSales,
-            topSellingItems,
+          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          Text(
+            'Failed to load analytics data',
+            style: TextStyle(fontSize: 18, color: Colors.red[700]),
           ),
-          _buildChartsTab(thisWeekSales, thisMonthSales),
-          _buildReportsTab(
-            currencyFormatter,
-            thisWeekSales,
-            thisMonthSales,
-            thisYearSales,
+          const SizedBox(height: 8),
+          Text(
+            'Unable to fetch sales data from the server',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(salesProvider.notifier).refresh();
+            },
+            child: const Text('Retry'),
           ),
         ],
       ),

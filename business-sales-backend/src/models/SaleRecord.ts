@@ -47,6 +47,11 @@ const SaleRecordSchema = new Schema({
     type: Date,
     default: Date.now,
     required: true
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: 500
   }
 },{
   timestamps: true
