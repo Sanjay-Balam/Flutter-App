@@ -4,8 +4,8 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: bun install
-    startCommand: bun run start
+    buildCommand: bun install --production
+    startCommand: bun index.ts
     envVars:
       - key: NODE_ENV
         value: production
