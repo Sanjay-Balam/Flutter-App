@@ -46,7 +46,10 @@ export const searchRoutes = new Elysia({ prefix: '' })
   // POST /search/:database/:tableName/create - Create new resource
   .post('/:database/createresource/:tableName', async ({ params, body }) => {
     const { database, tableName } = params;
-    return await searchService.createResource(database, tableName, body);
+    console.log('🟡 Route handler - createresource called:', { database, tableName, body });
+    const result = await searchService.createResource(database, tableName, body);
+    console.log('🟡 Route handler - returning result:', result);
+    return result;
   }, {
     params: t.Object({
       database: t.String(),

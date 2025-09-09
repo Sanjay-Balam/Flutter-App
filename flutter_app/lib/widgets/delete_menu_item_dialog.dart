@@ -45,7 +45,7 @@ class _DeleteMenuItemDialogState extends ConsumerState<DeleteMenuItemDialog> {
             child: Row(
               children: [
                 Text(
-                  widget.menuItem.category.icon,
+                  CategoryUtils.getCategoryIcon(widget.menuItem.category),
                   style: const TextStyle(fontSize: 24),
                 ),
                 const SizedBox(width: 12),
@@ -61,7 +61,7 @@ class _DeleteMenuItemDialogState extends ConsumerState<DeleteMenuItemDialog> {
                         ),
                       ),
                       Text(
-                        widget.menuItem.category.displayName,
+                        widget.menuItem.category,
                         style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       const SizedBox(height: 4),

@@ -23,46 +23,54 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _smallPriceController = TextEditingController();
-  final _largePriceController = TextEditingController();
-  final _regularPriceController = TextEditingController();
-
-  MenuCategory _selectedCategory = MenuCategory.milkCakes;
+  final _categoryController = TextEditingController();
+  
+  String _selectedCategory = '';
   bool _isAvailable = true;
   bool _isLoading = false;
-
-  // Price configuration based on category
-  final Map<MenuCategory, List<ItemSize>> _categorySizes = {
-    MenuCategory.milkCakes: [ItemSize.regular],
-    MenuCategory.cheeseCakes: [ItemSize.small, ItemSize.large],
-    MenuCategory.chocolateBrownie: [ItemSize.regular],
-  };
+  List<String> _selectedSizes = ['Regular'];
+  final Map<String, TextEditingController> _priceControllers = {};
 
   @override
   void initState() {
     super.initState();
 
+    // Initialize default sizes and controllers
+    _initializePriceControllers();
+    
     // If editing, populate form with existing data
     if (widget.menuItem != null) {
       final item = widget.menuItem!;
       _nameController.text = item.name;
       _descriptionController.text = item.description ?? '';
       _selectedCategory = item.category;
+      _categoryController.text = item.category;
       _isAvailable = item.isAvailable;
+      _selectedSizes = item.getAvailableSizes();
+      
+      // Reinitialize controllers for the item's sizes
+      _initializePriceControllers();
+      
+      // Populate price fields
+      for (final size in _selectedSizes) {
+        final price = item.prices[size];
+        if (price != null) {
+          _priceControllers[size]!.text = price.toInt().toString();
+        }
+      }
+    }
+  }
 
-      // Populate price fields based on category
-      final prices = item.prices;
-      if (prices.containsKey(ItemSize.small)) {
-        _smallPriceController.text = prices[ItemSize.small]!.toInt().toString();
-      }
-      if (prices.containsKey(ItemSize.large)) {
-        _largePriceController.text = prices[ItemSize.large]!.toInt().toString();
-      }
-      if (prices.containsKey(ItemSize.regular)) {
-        _regularPriceController.text = prices[ItemSize.regular]!
-            .toInt()
-            .toString();
-      }
+  void _initializePriceControllers() {
+    // Dispose existing controllers
+    for (final controller in _priceControllers.values) {
+      controller.dispose();
+    }
+    _priceControllers.clear();
+    
+    // Create controllers for selected sizes
+    for (final size in _selectedSizes) {
+      _priceControllers[size] = TextEditingController();
     }
   }
 
@@ -70,16 +78,16 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _smallPriceController.dispose();
-    _largePriceController.dispose();
-    _regularPriceController.dispose();
+    _categoryController.dispose();
+    for (final controller in _priceControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final availableSizes =
-        _categorySizes[_selectedCategory] ?? [ItemSize.regular];
+    final existingCategories = ref.watch(menuCategoriesProvider);
 
     return AlertDialog(
       title: Text(widget.dialogTitle),
@@ -110,78 +118,103 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Category Dropdown
-              DropdownButtonFormField<MenuCategory>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category *',
-                  border: OutlineInputBorder(),
-                ),
-                items: MenuCategory.values.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Row(
-                      children: [
-                        Text(
-                          category.icon,
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(category.displayName),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedCategory = value;
-                      // Clear price fields when category changes
-                      _smallPriceController.clear();
-                      _largePriceController.clear();
-                      _regularPriceController.clear();
-                    });
+              // Category Input with Autocomplete
+              Autocomplete<String>(
+                initialValue: TextEditingValue(text: _selectedCategory),
+                optionsBuilder: (textEditingValue) {
+                  if (textEditingValue.text.isEmpty) {
+                    return existingCategories;
                   }
+                  return existingCategories.where((category) =>
+                      category.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+                },
+                onSelected: (category) {
+                  setState(() {
+                    _selectedCategory = category;
+                    _categoryController.text = category;
+                    // Update sizes based on category presets
+                    _selectedSizes = CategoryUtils.getSizePresets(category);
+                    _initializePriceControllers();
+                  });
+                },
+                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                  _categoryController.text = controller.text;
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: 'Category *',
+                      hintText: 'e.g., Pizza, Burgers, Desserts',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: Text(
+                        CategoryUtils.getCategoryIcon(_selectedCategory.isEmpty ? 'Default' : _selectedCategory),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 40),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a category';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'Category must be at least 2 characters';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCategory = value.trim();
+                      });
+                    },
+                  );
                 },
               ),
               const SizedBox(height: 16),
 
-              // Price Fields (dynamic based on category)
-              Text('Prices *', style: Theme.of(context).textTheme.titleSmall),
+              // Size Management Section
+              Row(
+                children: [
+                  Text('Sizes & Prices *', style: Theme.of(context).textTheme.titleSmall),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => _showSizeManagementDialog(),
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Edit Sizes'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
-              ...availableSizes
-                  .map(
-                    (size) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TextFormField(
-                        controller: _getPriceController(size),
-                        decoration: InputDecoration(
-                          labelText: '${size.displayName} Price (₹)',
-                          hintText: 'Enter price in rupees',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.currency_rupee),
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter ${size.displayName.toLowerCase()} price';
-                          }
-                          final price = int.tryParse(value);
-                          if (price == null || price <= 0) {
-                            return 'Please enter a valid price';
-                          }
-                          if (price > 10000) {
-                            return 'Price must be less than ₹10,000';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  )
-                  .toList(),
+              
+              // Price Fields (dynamic based on selected sizes)
+              ..._selectedSizes.map((size) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextFormField(
+                  controller: _priceControllers[size],
+                  decoration: InputDecoration(
+                    labelText: '$size Price (₹)',
+                    hintText: 'Enter price in rupees',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.currency_rupee),
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter ${size.toLowerCase()} price';
+                    }
+                    final price = int.tryParse(value);
+                    if (price == null || price <= 0) {
+                      return 'Please enter a valid price';
+                    }
+                    if (price > 10000) {
+                      return 'Price must be less than ₹10,000';
+                    }
+                    return null;
+                  },
+                ),
+              )).toList(),
 
               // Description Field
               TextFormField(
@@ -234,15 +267,19 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
     );
   }
 
-  TextEditingController _getPriceController(ItemSize size) {
-    switch (size) {
-      case ItemSize.small:
-        return _smallPriceController;
-      case ItemSize.large:
-        return _largePriceController;
-      case ItemSize.regular:
-        return _regularPriceController;
-    }
+  void _showSizeManagementDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _SizeManagementDialog(
+        initialSizes: _selectedSizes,
+        onSizesChanged: (newSizes) {
+          setState(() {
+            _selectedSizes = newSizes;
+            _initializePriceControllers();
+          });
+        },
+      ),
+    );
   }
 
   void _handleSubmit() async {
@@ -258,15 +295,15 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
         throw Exception('User not authenticated');
       }
 
-      // Build prices map
-      final availableSizes =
-          _categorySizes[_selectedCategory] ?? [ItemSize.regular];
-      final Map<ItemSize, double> prices = {};
-
-      for (final size in availableSizes) {
-        final controller = _getPriceController(size);
-        final price = double.tryParse(controller.text) ?? 0;
-        prices[size] = price;
+      // Build prices map from selected sizes
+      final Map<String, double> prices = {};
+      
+      for (final size in _selectedSizes) {
+        final controller = _priceControllers[size];
+        if (controller != null) {
+          final price = double.tryParse(controller.text) ?? 0;
+          prices[size] = price;
+        }
       }
 
       // Create MenuItem object
@@ -275,7 +312,7 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
             widget.menuItem?.id ??
             '', // Will be generated by backend for new items
         name: _nameController.text.trim(),
-        category: _selectedCategory,
+        category: _selectedCategory.isEmpty ? _categoryController.text.trim() : _selectedCategory,
         prices: prices,
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -330,6 +367,118 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
           _isLoading = false;
         });
       }
+    }
+  }
+}
+
+class _SizeManagementDialog extends StatefulWidget {
+  final List<String> initialSizes;
+  final Function(List<String>) onSizesChanged;
+
+  const _SizeManagementDialog({
+    required this.initialSizes,
+    required this.onSizesChanged,
+  });
+
+  @override
+  State<_SizeManagementDialog> createState() => _SizeManagementDialogState();
+}
+
+class _SizeManagementDialogState extends State<_SizeManagementDialog> {
+  late List<String> _sizes;
+  final _sizeController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _sizes = List.from(widget.initialSizes);
+  }
+
+  @override
+  void dispose() {
+    _sizeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Manage Sizes'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Add new size
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _sizeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Add Size',
+                    hintText: 'e.g., Small, Large, XL',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (_) => _addSize(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: _addSize,
+                icon: const Icon(Icons.add),
+                tooltip: 'Add Size',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Current sizes
+          const Text('Current Sizes:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          if (_sizes.isEmpty)
+            const Text('No sizes added yet', style: TextStyle(color: Colors.grey))
+          else
+            Wrap(
+              spacing: 8,
+              children: _sizes.map((size) => Chip(
+                label: Text(size),
+                deleteIcon: _sizes.length > 1 ? const Icon(Icons.close, size: 16) : null,
+                onDeleted: _sizes.length > 1 ? () => _removeSize(size) : null,
+              )).toList(),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _sizes.isNotEmpty ? () {
+            widget.onSizesChanged(_sizes);
+            Navigator.of(context).pop();
+          } : null,
+          child: const Text('Apply'),
+        ),
+      ],
+    );
+  }
+
+  void _addSize() {
+    final size = _sizeController.text.trim();
+    if (size.isNotEmpty && !_sizes.contains(size)) {
+      setState(() {
+        _sizes.add(size);
+        _sizeController.clear();
+      });
+    }
+  }
+
+  void _removeSize(String size) {
+    if (_sizes.length > 1) {
+      setState(() {
+        _sizes.remove(size);
+      });
     }
   }
 }

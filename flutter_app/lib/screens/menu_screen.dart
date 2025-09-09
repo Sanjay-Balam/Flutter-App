@@ -17,22 +17,15 @@ class MenuScreen extends ConsumerStatefulWidget {
 
 class _MenuScreenState extends ConsumerState<MenuScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   final currencyFormatter = NumberFormat.currency(
     symbol: '₹',
     decimalDigits: 0,
   );
 
   @override
-  void initState() {
-    super.initState();
-    final categories = MenuCategory.values;
-    _tabController = TabController(length: categories.length, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -43,6 +36,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
     final menuItemsAsync = ref.watch(menuItemsProvider);
     final isLoading = ref.watch(isMenuItemsLoadingProvider);
     final error = ref.watch(menuItemsErrorProvider);
+
+    // Initialize or update tab controller when categories change
+    if (categories.isNotEmpty && 
+        (_tabController == null || _tabController!.length != categories.length)) {
+      _tabController?.dispose();
+      _tabController = TabController(length: categories.length, vsync: this);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -57,17 +57,19 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
                 : () => ref.read(menuItemsProvider.notifier).refresh(),
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
+        bottom: categories.isEmpty || _tabController == null ? null : TabBar(
+          controller: _tabController!,
           tabs: categories.map((category) {
             return Tab(
-              text: category.displayName,
-              icon: Text(category.icon, style: const TextStyle(fontSize: 20)),
+              text: category,
+              icon: Text(CategoryUtils.getCategoryIcon(category), 
+                       style: const TextStyle(fontSize: 20)),
             );
           }).toList(),
           indicatorColor: Colors.white,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
+          isScrollable: categories.length > 3, // Make scrollable if too many categories
         ),
       ),
       body: Column(
@@ -164,12 +166,33 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
               ),
             )
           // Menu Items Tabs
+          else if (categories.isEmpty)
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.restaurant_menu, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      'No menu items yet',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Add your first menu item to get started!',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else
             Expanded(
               child: Stack(
                 children: [
                   TabBarView(
-                    controller: _tabController,
+                    controller: _tabController!,
                     children: categories.map((category) {
                       return _buildCategoryView(category);
                     }).toList(),
@@ -199,7 +222,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
     );
   }
 
-  Widget _buildCategoryView(MenuCategory category) {
+  Widget _buildCategoryView(String category) {
     final categoryItemsAsync = ref.watch(menuItemsByCategoryProvider(category));
 
     return categoryItemsAsync.when(
@@ -233,7 +256,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Error loading ${category.displayName}',
+              'Error loading $category',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -274,7 +297,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '✅ Sold ${quantity}x ${menuItem.name} (${size.displayName}) - ₹${(menuItem.getPriceBySize(size) * quantity).toInt()}',
+                    '✅ Sold ${quantity}x ${menuItem.name} ($size) - ₹${(menuItem.getPriceBySize(size) * quantity).toInt()}',
                   ),
                   backgroundColor: Colors.green,
                   duration: const Duration(seconds: 3),

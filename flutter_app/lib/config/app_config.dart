@@ -10,7 +10,7 @@ class AppConfig {
 
   /// Base URL for the backend API
   /// Switch between local and deployed backend
-  static const String baseUrl = 'https://flutter-app-1o90.onrender.com';
+  static const String baseUrl = 'http://localhost:3000';
   // Local development: 'http://localhost:3000'
 
   /// Database name used in API endpoints
@@ -28,7 +28,7 @@ class AppConfig {
 
   /// Default user ID for demo purposes
   /// TODO: Replace with actual authentication system
-  static const String defaultUserId = '688722a1574e0612934de3a0';
+  static const String defaultUserId = '68c08b8e1c999983c9a8c45f';
 
   // ==========================================================================
   // Pagination Configuration

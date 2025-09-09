@@ -1,0 +1,9 @@
+
+> business-sales-backend@1.0.0 start
+> bun index.ts
+
+✅ Connected to MongoDB successfully
+🚀 Business Sales Tracker API is running on port 3000
+📚 API Documentation available at /swagger
+🏥 Health check available at /health
+📊 Database status: ✅ Connected

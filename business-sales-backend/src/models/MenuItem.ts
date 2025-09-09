@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
-import { MenuCategory, ItemSize } from '../types';
 
 const MenuItemSchema = new Schema({
   userId: {
@@ -17,7 +16,8 @@ const MenuItemSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: Object.values(MenuCategory)
+    trim: true,
+    maxlength: 50
   },
   prices: {
     type: Map,
@@ -30,6 +30,11 @@ const MenuItemSchema = new Schema({
       },
       message: 'At least one price must be provided'
     }
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 200
   },
   isAvailable: {
     type: Boolean,

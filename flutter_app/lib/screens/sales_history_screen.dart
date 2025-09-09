@@ -219,7 +219,7 @@ class SalesHistoryScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${sale.quantity}x ${sale.size.displayName}',
+                        '${sale.quantity}x ${sale.size}',
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
@@ -265,12 +265,12 @@ class SalesHistoryScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        sale.category.icon,
+                        CategoryUtils.getCategoryIcon(sale.category),
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        sale.category.displayName,
+                        sale.category,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

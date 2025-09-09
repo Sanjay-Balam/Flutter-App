@@ -2,8 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'menu_item.g.dart';
 
-enum MenuCategory { milkCakes, cheeseCakes, chocolateBrownie }
-
 enum ItemSize { small, large, regular }
 
 @JsonSerializable()
@@ -11,8 +9,8 @@ class MenuItem {
   @JsonKey(name: '_id')
   final String id;
   final String name;
-  final MenuCategory category;
-  final Map<ItemSize, double> prices; // Size -> Price mapping
+  final String category; // Dynamic category name
+  final Map<String, double> prices; // Flexible size -> price mapping
   final String? description;
   final bool isAvailable;
   final String? userId; // Backend userId field
@@ -35,27 +33,35 @@ class MenuItem {
     // Handle the backend response format
     Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
     
-    // Convert MongoDB _id to id
-    if (processedJson.containsKey('_id') && processedJson['_id'] is Map) {
-      processedJson['_id'] = processedJson['_id']['\$oid'];
+    // Convert MongoDB _id to id - handle both string and object format
+    if (processedJson.containsKey('_id')) {
+      if (processedJson['_id'] is Map && processedJson['_id'].containsKey('\$oid')) {
+        processedJson['_id'] = processedJson['_id']['\$oid'];
+      }
+      // If _id is already a string, leave it as is
     }
     
-    // Convert userId ObjectId to string
-    if (processedJson.containsKey('userId') && processedJson['userId'] is Map) {
-      processedJson['userId'] = processedJson['userId']['\$oid'];
+    // Convert userId ObjectId to string - handle both string and object format  
+    if (processedJson.containsKey('userId')) {
+      if (processedJson['userId'] is Map && processedJson['userId'].containsKey('\$oid')) {
+        processedJson['userId'] = processedJson['userId']['\$oid'];
+      }
+      // If userId is already a string, leave it as is
     }
     
-    // Convert date strings to DateTime
-    if (processedJson.containsKey('createdAt')) {
+    // Convert date strings to DateTime - handle both string and object format
+    if (processedJson.containsKey('createdAt') && processedJson['createdAt'] != null) {
       if (processedJson['createdAt'] is Map && processedJson['createdAt'].containsKey('\$date')) {
         processedJson['createdAt'] = processedJson['createdAt']['\$date'];
       }
+      // If createdAt is already a string, leave it as is
     }
     
-    if (processedJson.containsKey('updatedAt')) {
+    if (processedJson.containsKey('updatedAt') && processedJson['updatedAt'] != null) {
       if (processedJson['updatedAt'] is Map && processedJson['updatedAt'].containsKey('\$date')) {
         processedJson['updatedAt'] = processedJson['updatedAt']['\$date'];
       }
+      // If updatedAt is already a string, leave it as is
     }
     
     return _$MenuItemFromJson(processedJson);
@@ -64,12 +70,12 @@ class MenuItem {
   Map<String, dynamic> toJson() => _$MenuItemToJson(this);
 
   // Helper method to get price by size
-  double getPriceBySize(ItemSize size) {
+  double getPriceBySize(String size) {
     return prices[size] ?? prices.values.first;
   }
 
   // Helper method to get available sizes
-  List<ItemSize> getAvailableSizes() {
+  List<String> getAvailableSizes() {
     return prices.keys.toList();
   }
 
@@ -79,28 +85,34 @@ class MenuItem {
   }
 }
 
-// Extension to convert enum to display string
-extension MenuCategoryExtension on MenuCategory {
-  String get displayName {
-    switch (this) {
-      case MenuCategory.milkCakes:
-        return 'Milk Cakes';
-      case MenuCategory.cheeseCakes:
-        return 'Cheese Cakes';
-      case MenuCategory.chocolateBrownie:
-        return 'Chocolate Brownie';
-    }
+// Utility class for category management
+class CategoryUtils {
+  static const Map<String, String> categoryIcons = {
+    'Milk Cakes': '🥛',
+    'Cheese Cakes': '🧀', 
+    'Chocolate Brownie': '🍫',
+    'Pizza': '🍕',
+    'Burgers': '🍔',
+    'Beverages': '🥤',
+    'Desserts': '🍰',
+    'Snacks': '🍿',
+  };
+
+  static String getCategoryIcon(String category) {
+    return categoryIcons[category] ?? '🍽️';
   }
 
-  String get icon {
-    switch (this) {
-      case MenuCategory.milkCakes:
-        return '🥛';
-      case MenuCategory.cheeseCakes:
-        return '🧀';
-      case MenuCategory.chocolateBrownie:
-        return '🍫';
-    }
+  static const Map<String, List<String>> categorySizePresets = {
+    'Milk Cakes': ['Regular'],
+    'Cheese Cakes': ['Small', 'Large'], 
+    'Chocolate Brownie': ['Regular'],
+    'Pizza': ['Small', 'Medium', 'Large'],
+    'Burgers': ['Regular', 'Large'],
+    'Beverages': ['Small', 'Medium', 'Large'],
+  };
+
+  static List<String> getSizePresets(String category) {
+    return categorySizePresets[category] ?? ['Regular'];
   }
 }
 

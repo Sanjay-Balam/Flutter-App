@@ -9,8 +9,8 @@ class SaleRecord {
   final String id;
   final String menuItemId;
   final String itemName;
-  final MenuCategory category;
-  final ItemSize size;
+  final String category;
+  final String size;
   final double unitPrice;
   final int quantity;
   final double totalAmount;
@@ -40,20 +40,28 @@ class SaleRecord {
     // Handle the backend response format
     Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
 
-    // Convert MongoDB _id to id
-    if (processedJson.containsKey('_id') && processedJson['_id'] is Map) {
-      processedJson['_id'] = processedJson['_id']['\$oid'];
+    // Convert MongoDB _id to id - handle both string and object format
+    if (processedJson.containsKey('_id')) {
+      if (processedJson['_id'] is Map && processedJson['_id'].containsKey('\$oid')) {
+        processedJson['_id'] = processedJson['_id']['\$oid'];
+      }
+      // If _id is already a string, leave it as is
     }
 
-    // Convert menuItemId ObjectId to string
-    if (processedJson.containsKey('menuItemId') &&
-        processedJson['menuItemId'] is Map) {
-      processedJson['menuItemId'] = processedJson['menuItemId']['\$oid'];
+    // Convert menuItemId ObjectId to string - handle both formats
+    if (processedJson.containsKey('menuItemId')) {
+      if (processedJson['menuItemId'] is Map && processedJson['menuItemId'].containsKey('\$oid')) {
+        processedJson['menuItemId'] = processedJson['menuItemId']['\$oid'];
+      }
+      // If menuItemId is already a string, leave it as is
     }
 
-    // Convert userId ObjectId to string
-    if (processedJson.containsKey('userId') && processedJson['userId'] is Map) {
-      processedJson['userId'] = processedJson['userId']['\$oid'];
+    // Convert userId ObjectId to string - handle both formats  
+    if (processedJson.containsKey('userId')) {
+      if (processedJson['userId'] is Map && processedJson['userId'].containsKey('\$oid')) {
+        processedJson['userId'] = processedJson['userId']['\$oid'];
+      }
+      // If userId is already a string, leave it as is
     }
 
     // Convert date strings to DateTime
@@ -87,7 +95,7 @@ class SaleRecord {
   factory SaleRecord.fromMenuItem({
     required String id,
     required MenuItem menuItem,
-    required ItemSize size,
+    required String size,
     required int quantity,
     required DateTime timestamp,
     String? notes,

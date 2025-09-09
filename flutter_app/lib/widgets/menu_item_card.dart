@@ -72,7 +72,7 @@ class MenuItemCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        menuItem.category.icon,
+                        CategoryUtils.getCategoryIcon(menuItem.category),
                         style: const TextStyle(fontSize: 24),
                       ),
                     ),
@@ -204,7 +204,7 @@ class MenuItemCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      entry.key.displayName,
+                      entry.key,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

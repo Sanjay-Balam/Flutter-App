@@ -10,8 +10,8 @@ SaleRecord _$SaleRecordFromJson(Map<String, dynamic> json) => SaleRecord(
   id: json['_id'] as String,
   menuItemId: json['menuItemId'] as String,
   itemName: json['itemName'] as String,
-  category: $enumDecode(_$MenuCategoryEnumMap, json['category']),
-  size: $enumDecode(_$ItemSizeEnumMap, json['size']),
+  category: json['category'] as String,
+  size: json['size'] as String,
   unitPrice: (json['unitPrice'] as num).toDouble(),
   quantity: (json['quantity'] as num).toInt(),
   totalAmount: (json['totalAmount'] as num).toDouble(),
@@ -31,8 +31,8 @@ Map<String, dynamic> _$SaleRecordToJson(SaleRecord instance) =>
       '_id': instance.id,
       'menuItemId': instance.menuItemId,
       'itemName': instance.itemName,
-      'category': _$MenuCategoryEnumMap[instance.category]!,
-      'size': _$ItemSizeEnumMap[instance.size]!,
+      'category': instance.category,
+      'size': instance.size,
       'unitPrice': instance.unitPrice,
       'quantity': instance.quantity,
       'totalAmount': instance.totalAmount,
@@ -42,12 +42,6 @@ Map<String, dynamic> _$SaleRecordToJson(SaleRecord instance) =>
       'createdAt': instance.createdAt?.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
     };
-
-const _$MenuCategoryEnumMap = {
-  MenuCategory.milkCakes: 'milkCakes',
-  MenuCategory.cheeseCakes: 'cheeseCakes',
-  MenuCategory.chocolateBrownie: 'chocolateBrownie',
-};
 
 const _$ItemSizeEnumMap = {
   ItemSize.small: 'small',

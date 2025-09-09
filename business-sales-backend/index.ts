@@ -10,10 +10,10 @@ await Database.connect();
 const app = new Elysia()
   // Add CORS support
   .use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: true, // Allow all origins for now
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'User-Agent'],
+    credentials: false // Set to false to avoid preflight issues
   }))
 
   // Add Swagger documentation
@@ -65,12 +65,24 @@ const app = new Elysia()
     app.use(searchRoutes)
   )
 
+  // Request logging middleware
+  .onRequest(({ request, path, method }) => {
+    console.log(`📝 ${method} ${path} - Origin: ${request.headers.get('origin')} - User-Agent: ${request.headers.get('user-agent')?.substring(0, 50)}...`);
+  })
+
   // Global error handler
-  .onError(({ code, error, set }) => {
+  .onError(({ code, error, set, request }) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
     
-    console.error('API Error:', { code, error: errorMessage, stack: errorStack });
+    console.error('API Error:', { 
+      code, 
+      error: errorMessage, 
+      stack: errorStack,
+      method: request.method,
+      url: request.url,
+      origin: request.headers.get('origin')
+    });
     
     switch (code) {
       case 'VALIDATION':

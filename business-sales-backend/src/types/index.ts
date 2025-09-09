@@ -1,9 +1,4 @@
-// Enums matching Flutter app
-export enum MenuCategory {
-  MILK_CAKES = 'milkCakes',
-  CHEESE_CAKES = 'cheeseCakes',
-  CHOCOLATE_BROWNIE = 'chocolateBrownie'
-}
+// Enums and types matching Flutter app
 
 export enum ItemSize {
   SMALL = 'small',
@@ -55,8 +50,8 @@ export interface User {
 export interface MenuItem {
   id: string;
   name: string;
-  category: MenuCategory;
-  prices: Record<ItemSize, number>;
+  category: string; // Dynamic category name
+  prices: Record<string, number>; // Flexible size -> price mapping
   description?: string;
   isAvailable: boolean;
   userId: string; // Reference to User._id
@@ -69,8 +64,8 @@ export interface SaleRecord {
   id: string;
   menuItemId: string;
   itemName: string;
-  category: MenuCategory;
-  size: ItemSize;
+  category: string; // Dynamic category name
+  size: string; // Flexible size name
   unitPrice: number;
   quantity: number;
   totalAmount: number;
@@ -118,7 +113,7 @@ export interface SalesAnalytics {
 }
 
 export interface CategoryAnalytics {
-  category: MenuCategory;
+  category: string; // Dynamic category name
   sales: number;
   revenue: number;
   percentage: number;
@@ -138,7 +133,7 @@ export interface AnalyticsResponse {
 // Request Body Types
 export interface CreateSaleRequest {
   menuItemId: string;
-  size: ItemSize;
+  size: string; // Flexible size name
   quantity: number;
   notes?: string;
   userId: string;
@@ -146,8 +141,8 @@ export interface CreateSaleRequest {
 
 export interface UpdateMenuItemRequest {
   name?: string;
-  category?: MenuCategory;
-  prices?: Record<ItemSize, number>;
+  category?: string; // Dynamic category name
+  prices?: Record<string, number>; // Flexible size -> price mapping
   description?: string;
   isAvailable?: boolean;
 }

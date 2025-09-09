@@ -5,7 +5,7 @@ import '../models/menu_item.dart';
 
 class SellDialog extends StatefulWidget {
   final MenuItem menuItem;
-  final Function(ItemSize size, int quantity, String? notes) onSell;
+  final Function(String size, int quantity, String? notes) onSell;
 
   const SellDialog({super.key, required this.menuItem, required this.onSell});
 
@@ -14,7 +14,7 @@ class SellDialog extends StatefulWidget {
 }
 
 class _SellDialogState extends State<SellDialog> {
-  late ItemSize selectedSize;
+  late String selectedSize;
   int quantity = 1;
   bool _isProcessingSale = false;
   final TextEditingController notesController = TextEditingController();
@@ -63,7 +63,7 @@ class _SellDialogState extends State<SellDialog> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    widget.menuItem.category.icon,
+                    CategoryUtils.getCategoryIcon(widget.menuItem.category),
                     style: const TextStyle(fontSize: 20),
                   ),
                 ),
@@ -111,7 +111,7 @@ class _SellDialogState extends State<SellDialog> {
                   return FilterChip(
                     selected: isSelected,
                     label: Text(
-                      '${size.displayName} - ${currencyFormatter.format(price)}',
+                      '$size - ${currencyFormatter.format(price)}',
                     ),
                     onSelected: (selected) {
                       if (selected) {

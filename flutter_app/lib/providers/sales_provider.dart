@@ -37,7 +37,7 @@ class SalesNotifier extends AsyncNotifier<List<SaleRecord>> {
   // Add a new sale
   Future<void> addSale({
     required MenuItem menuItem,
-    required ItemSize size,
+    required String size,
     required int quantity,
     String? notes,
   }) async {

@@ -59,7 +59,7 @@ class ApiService {
   /// Fetch menu items by category and userId
   Future<List<MenuItem>> getMenuItemsByCategory(
     String userId,
-    MenuCategory category,
+    String category,
   ) async {
     try {
       final url = Uri.parse(AppConfig.searchResourceEndpoint('MenuItems'));
@@ -67,7 +67,7 @@ class ApiService {
       final requestBody = {
         'filter': {
           'userId': userId,
-          'category': category.name,
+          'category': category,
           'isAvailable': true,
         },
         'sort': {'name': 1},

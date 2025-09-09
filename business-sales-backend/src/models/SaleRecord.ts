@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
-import { MenuCategory, ItemSize } from '../types';
+import { ItemSize } from '../types';
 
 const SaleRecordSchema = new Schema({
   menuItemId: {
@@ -21,12 +21,14 @@ const SaleRecordSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: Object.values(MenuCategory)
+    trim: true,
+    maxlength: 50
   },
   size: {
     type: String,
     required: true,
-    enum: Object.values(ItemSize)
+    trim: true,
+    maxlength: 30
   },
   unitPrice: {
     type: Number,

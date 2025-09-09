@@ -1,5 +1,4 @@
 import searchService from '../services/SearchService';
-import { MenuCategory, ItemSize } from '../types';
 
 // Menu data that matches your Flutter app
 const menuItems = [
@@ -7,40 +6,40 @@ const menuItems = [
   {
     id: 'milk_malai',
     name: 'Milk Malai',
-    category: MenuCategory.MILK_CAKES,
-    prices: { [ItemSize.REGULAR]: 99 },
+    category: 'Milk Cakes',
+    prices: { 'Regular': 99 },
     description: 'Creamy milk-based cake with malai flavor',
     isAvailable: true
   },
   {
     id: 'oreo_milk',
     name: 'Oreo',
-    category: MenuCategory.MILK_CAKES,
-    prices: { [ItemSize.REGULAR]: 99 },
+    category: 'Milk Cakes',
+    prices: { 'Regular': 99 },
     description: 'Milk cake with Oreo cookie flavor',
     isAvailable: true
   },
   {
     id: 'biscoff_milk',
     name: 'Biscoff',
-    category: MenuCategory.MILK_CAKES,
-    prices: { [ItemSize.REGULAR]: 99 },
+    category: 'Milk Cakes',
+    prices: { 'Regular': 99 },
     description: 'Milk cake with Biscoff cookie flavor',
     isAvailable: true
   },
   {
     id: 'dairy_milk',
     name: 'Dairy Milk',
-    category: MenuCategory.MILK_CAKES,
-    prices: { [ItemSize.REGULAR]: 99 },
+    category: 'Milk Cakes',
+    prices: { 'Regular': 99 },
     description: 'Chocolate milk cake with Dairy Milk flavor',
     isAvailable: true
   },
   {
     id: 'ras_malai',
     name: 'Ras Malai',
-    category: MenuCategory.MILK_CAKES,
-    prices: { [ItemSize.REGULAR]: 99 },
+    category: 'Milk Cakes',
+    prices: { 'Regular': 99 },
     description: 'Traditional Ras Malai flavored milk cake',
     isAvailable: true
   },
@@ -49,10 +48,10 @@ const menuItems = [
   {
     id: 'lotus_biscoff_cheese',
     name: 'Lotus Biscoff',
-    category: MenuCategory.CHEESE_CAKES,
+    category: 'Cheese Cakes',
     prices: {
-      [ItemSize.SMALL]: 79,
-      [ItemSize.LARGE]: 139
+      'Small': 79,
+      'Large': 139
     },
     description: 'Rich cheesecake with Lotus Biscoff flavor',
     isAvailable: true
@@ -60,10 +59,10 @@ const menuItems = [
   {
     id: 'oreo_cheese',
     name: 'Oreo',
-    category: MenuCategory.CHEESE_CAKES,
+    category: 'Cheese Cakes',
     prices: {
-      [ItemSize.SMALL]: 79,
-      [ItemSize.LARGE]: 139
+      'Small': 79,
+      'Large': 139
     },
     description: 'Cheesecake with crushed Oreo cookies',
     isAvailable: true
@@ -71,10 +70,10 @@ const menuItems = [
   {
     id: 'blueberry_cheese',
     name: 'Blueberry',
-    category: MenuCategory.CHEESE_CAKES,
+    category: 'Cheese Cakes',
     prices: {
-      [ItemSize.SMALL]: 79,
-      [ItemSize.LARGE]: 139
+      'Small': 79,
+      'Large': 139
     },
     description: 'Fresh blueberry cheesecake',
     isAvailable: true
@@ -84,8 +83,8 @@ const menuItems = [
   {
     id: 'chocolate_brownie',
     name: 'Chocolate Brownie',
-    category: MenuCategory.CHOCOLATE_BROWNIE,
-    prices: { [ItemSize.REGULAR]: 149 },
+    category: 'Chocolate Brownie',
+    prices: { 'Regular': 149 },
     description: 'Rich and fudgy chocolate goodness topped with a scoop of vanilla ice cream. The perfect dessert for chocolate lovers.',
     isAvailable: true
   }
@@ -155,7 +154,7 @@ export async function seedMenuItems() {
     // Test the search functionality
     console.log('\n🔍 Testing search functionality...');
     const searchResult = await searchService.searchResource(database, 'MenuItems', {
-      filter: { category: MenuCategory.MILK_CAKES },
+      filter: { category: 'Milk Cakes' },
       sort: { name: 1 }
     });
     
@@ -263,4 +262,4 @@ if (import.meta.main) {
   }
   
   process.exit(0);
-} 
+}

@@ -117,7 +117,7 @@ class MenuItemsListWidget extends ConsumerWidget {
                   }
 
                   // Group items by category for display
-                  final groupedItems = <MenuCategory, List<MenuItem>>{};
+                  final groupedItems = <String, List<MenuItem>>{};
                   for (final item in menuItems) {
                     groupedItems.putIfAbsent(item.category, () => []).add(item);
                   }
@@ -129,11 +129,11 @@ class MenuItemsListWidget extends ConsumerWidget {
 
                       return ExpansionTile(
                         title: Text(
-                          '${category.displayName} (${items.length})',
+                          '$category (${items.length})',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         leading: Text(
-                          category.icon,
+                          CategoryUtils.getCategoryIcon(category),
                           style: const TextStyle(fontSize: 24),
                         ),
                         initiallyExpanded: true,
@@ -170,7 +170,7 @@ class MenuItemsListWidget extends ConsumerWidget {
             children: item.prices.entries.map((priceEntry) {
               return Chip(
                 label: Text(
-                  '${priceEntry.key.displayName}: ₹${priceEntry.value.toInt()}',
+                  '${priceEntry.key}: ₹${priceEntry.value.toInt()}',
                   style: const TextStyle(fontSize: 12),
                 ),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -202,7 +202,7 @@ class MenuItemsListWidget extends ConsumerWidget {
 
 /// Widget to demonstrate category-specific menu items
 class CategoryMenuItemsWidget extends ConsumerWidget {
-  final MenuCategory category;
+  final String category;
 
   const CategoryMenuItemsWidget({super.key, required this.category});
 
@@ -218,10 +218,10 @@ class CategoryMenuItemsWidget extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text(category.icon, style: const TextStyle(fontSize: 24)),
+                Text(CategoryUtils.getCategoryIcon(category), style: const TextStyle(fontSize: 24)),
                 const SizedBox(width: 8),
                 Text(
-                  category.displayName,
+                  category,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -236,7 +236,7 @@ class CategoryMenuItemsWidget extends ConsumerWidget {
                   if (items.isEmpty) {
                     return Center(
                       child: Text(
-                        'No ${category.displayName.toLowerCase()} available',
+                        'No ${category.toLowerCase()} available',
                       ),
                     );
                   }

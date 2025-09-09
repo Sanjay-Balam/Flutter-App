@@ -93,7 +93,7 @@ final menuItemsProvider =
 
 // Menu items by category provider (computed from main provider)
 final menuItemsByCategoryProvider =
-    Provider.family<AsyncValue<List<MenuItem>>, MenuCategory>((ref, category) {
+    Provider.family<AsyncValue<List<MenuItem>>, String>((ref, category) {
       final menuItemsAsync = ref.watch(menuItemsProvider);
       return menuItemsAsync.when(
         data: (items) => AsyncValue.data(
@@ -135,14 +135,23 @@ final menuItemProvider = Provider.family<AsyncValue<MenuItem?>, String>((
   );
 });
 
-// All categories provider
-final menuCategoriesProvider = Provider<List<MenuCategory>>((ref) {
-  return MenuCategory.values;
+// Dynamic categories provider - extracts unique categories from menu items
+final menuCategoriesProvider = Provider<List<String>>((ref) {
+  final menuItemsAsync = ref.watch(menuItemsProvider);
+  return menuItemsAsync.when(
+    data: (items) {
+      final categories = items.map((item) => item.category).toSet().toList();
+      categories.sort(); // Sort alphabetically
+      return categories;
+    },
+    loading: () => <String>[],
+    error: (error, stackTrace) => <String>[],
+  );
 });
 
 // Menu items count by category
 final menuItemsCountByCategoryProvider =
-    Provider.family<AsyncValue<int>, MenuCategory>((ref, category) {
+    Provider.family<AsyncValue<int>, String>((ref, category) {
       final categoryItemsAsync = ref.watch(
         menuItemsByCategoryProvider(category),
       );

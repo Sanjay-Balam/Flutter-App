@@ -19,7 +19,7 @@ class SalesApiService {
   /// Create a new sale record
   Future<SaleRecord> createSale({
     required MenuItem menuItem,
-    required ItemSize size,
+    required String size,
     required int quantity,
     required String userId,
     String? notes,
@@ -35,8 +35,8 @@ class SalesApiService {
         'menuItemId': menuItem.id,
         'userId': userId,
         'itemName': menuItem.name,
-        'category': menuItem.category.name,
-        'size': size.name,
+        'category': menuItem.category,
+        'size': size,
         'unitPrice': unitPrice,
         'quantity': quantity,
         'totalAmount': totalAmount,
@@ -44,26 +44,53 @@ class SalesApiService {
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
       };
 
+      print('🔍 Creating sale - URL: $url');
+      print('🔍 Creating sale - Request body: ${jsonEncode(requestBody)}');
+
+      // Add a small delay to ensure backend is ready
+      await Future.delayed(Duration(milliseconds: 100));
+      
       final response = await _client.post(
         url,
         headers: _headers,
         body: jsonEncode(requestBody),
+      ).timeout(
+        Duration(seconds: AppConfig.apiTimeoutSeconds),
+        onTimeout: () {
+          throw Exception('Request timed out after ${AppConfig.apiTimeoutSeconds} seconds');
+        },
       );
 
-      if (response.statusCode == 200) {
+      print('🔍 Response status: ${response.statusCode}');
+      print('🔍 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print('🔍 Parsed response data: $responseData');
 
         if (responseData['success'] == true && responseData['data'] != null) {
-          return SaleRecord.fromJson(responseData['data']);
+          print('🔍 Response data field: ${responseData['data']}');
+          print('🔍 Response data type: ${responseData['data'].runtimeType}');
+          
+          try {
+            final saleRecord = SaleRecord.fromJson(responseData['data']);
+            print('🔍 Successfully created SaleRecord: ${saleRecord.id}');
+            return saleRecord;
+          } catch (parseError) {
+            print('❌ Error parsing SaleRecord: $parseError');
+            print('❌ Raw data that failed to parse: ${responseData['data']}');
+            throw Exception('Failed to parse sale record: $parseError');
+          }
         } else {
           throw Exception(
-            'API returned error: ${responseData['error'] ?? 'Unknown error'}',
+            'API returned error: ${responseData['error'] ?? 'Unknown error'} - Response: ${response.body}',
           );
         }
       } else {
         throw Exception('HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
+      print('❌ Error creating sale: $e');
       throw Exception('Failed to create sale: $e');
     }
   }

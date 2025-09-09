@@ -583,7 +583,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     }
 
     // Group sales by category
-    final Map<MenuCategory, double> categoryRevenue = {};
+    final Map<String, double> categoryRevenue = {};
     for (final sale in monthSales) {
       categoryRevenue[sale.category] =
           (categoryRevenue[sale.category] ?? 0) + sale.totalAmount;
@@ -593,7 +593,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
       final color = _getCategoryColor(entry.key);
       return PieChartSectionData(
         value: entry.value,
-        title: '${entry.key.displayName}\n₹${entry.value.toInt()}',
+        title: '${entry.key}\n₹${entry.value.toInt()}',
         color: color,
         radius: 60,
         titleStyle: const TextStyle(
@@ -613,15 +613,21 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     );
   }
 
-  Color _getCategoryColor(MenuCategory category) {
-    switch (category) {
-      case MenuCategory.milkCakes:
-        return Colors.blue;
-      case MenuCategory.cheeseCakes:
-        return Colors.orange;
-      case MenuCategory.chocolateBrownie:
-        return Colors.green;
-    }
+  Color _getCategoryColor(String category) {
+    // Generate colors based on category string hash
+    final colors = [
+      Colors.blue,
+      Colors.orange, 
+      Colors.green,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.amber,
+      Colors.indigo,
+      Colors.pink,
+      Colors.cyan,
+    ];
+    return colors[category.hashCode.abs() % colors.length];
   }
 
   Widget _buildReportCard(

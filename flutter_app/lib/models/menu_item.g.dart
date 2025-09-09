@@ -9,10 +9,9 @@ part of 'menu_item.dart';
 MenuItem _$MenuItemFromJson(Map<String, dynamic> json) => MenuItem(
   id: json['_id'] as String,
   name: json['name'] as String,
-  category: $enumDecode(_$MenuCategoryEnumMap, json['category']),
+  category: json['category'] as String,
   prices: (json['prices'] as Map<String, dynamic>).map(
-    (k, e) =>
-        MapEntry($enumDecode(_$ItemSizeEnumMap, k), (e as num).toDouble()),
+    (k, e) => MapEntry(k, (e as num).toDouble()),
   ),
   description: json['description'] as String?,
   isAvailable: json['isAvailable'] as bool? ?? true,
@@ -28,19 +27,13 @@ MenuItem _$MenuItemFromJson(Map<String, dynamic> json) => MenuItem(
 Map<String, dynamic> _$MenuItemToJson(MenuItem instance) => <String, dynamic>{
   '_id': instance.id,
   'name': instance.name,
-  'category': _$MenuCategoryEnumMap[instance.category]!,
-  'prices': instance.prices.map((k, e) => MapEntry(_$ItemSizeEnumMap[k]!, e)),
+  'category': instance.category,
+  'prices': instance.prices,
   'description': instance.description,
   'isAvailable': instance.isAvailable,
   'userId': instance.userId,
   'createdAt': instance.createdAt?.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
-};
-
-const _$MenuCategoryEnumMap = {
-  MenuCategory.milkCakes: 'milkCakes',
-  MenuCategory.cheeseCakes: 'cheeseCakes',
-  MenuCategory.chocolateBrownie: 'chocolateBrownie',
 };
 
 const _$ItemSizeEnumMap = {

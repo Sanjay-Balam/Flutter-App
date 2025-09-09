@@ -129,17 +129,23 @@ function convertStringsToObjectIdsAndDates(obj: any, schema: mongoose.Schema<any
 const searchService = {
   // Create a new resource (menu item or sale record)
   createResource: async (database: string, tableName: string, body: any) => {
+    console.log('🔴 CreateResource called:', { database, tableName, body });
     try {
       const conn = await getDbConnection(database);
       const Model = getModel(conn, tableName);
       
       // Convert string ObjectIds to MongoDB ObjectIds before creating the document
       const convertedBody = convertStringsToObjectIdsAndDates(body, Model.schema);
+      console.log('🔴 Converted body:', convertedBody);
       
       const doc = new Model(convertedBody);
       const result = await doc.save();
-      return { success: true, data: result };
+      console.log('🔴 Save result:', result);
+      const response = { success: true, data: result };
+      console.log('🔴 Final response:', response);
+      return response;
     } catch (error: any) {
+      console.log('🔴 Error in createResource:', error);
       if (error.name === "ValidationError") {
         return {
           success: false,
