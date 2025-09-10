@@ -1,4 +1,4 @@
-
+cd D
 > business-sales-backend@1.0.0 start
 > bun index.ts
 

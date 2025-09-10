@@ -12,8 +12,10 @@ const app = new Elysia()
   .use(cors({
     origin: true, // Allow all origins for now
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'User-Agent'],
-    credentials: false // Set to false to avoid preflight issues
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'User-Agent', 'X-Requested-With'],
+    credentials: false, // Set to false to avoid preflight issues
+    exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+    maxAge: 86400 // Cache preflight response for 24 hours
   }))
 
   // Add Swagger documentation
@@ -59,6 +61,16 @@ const app = new Elysia()
     database: Database.getConnectionStatus() ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   }))
+
+  // Explicit preflight handler for all routes
+  .options('*', ({ set }) => {
+    set.headers['Access-Control-Allow-Origin'] = '*';
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS';
+    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept, User-Agent, X-Requested-With';
+    set.headers['Access-Control-Max-Age'] = '86400';
+    set.status = 200;
+    return '';
+  })
 
   // API routes with versioning
   .group('', (app) => 
