@@ -2,12 +2,14 @@ import mongoose from 'mongoose';
 import MenuItemModel from '../models/MenuItem';
 import SaleRecordModel from '../models/SaleRecord';
 import UserModel from '../models/User.schema';
+import CategoryModel from '../models/Category';
 
 // Model Map for the business sales application
 const modelMap: { [key: string]: mongoose.Model<any> } = {
   MenuItems: MenuItemModel,
   SaleRecords: SaleRecordModel,
-  Users: UserModel
+  Users: UserModel,
+  Categories: CategoryModel
 };
 
 // Custom Error Classes

@@ -10,8 +10,8 @@ class AppConfig {
 
   /// Base URL for the backend API
   /// Switch between local and deployed backend
-  static const String baseUrl = 'https://flutter-app-1o90.onrender.com';
-  // Local development: 'http://localhost:3000'
+  // static const String baseUrl = 'https://flutter-app-1o90.onrender.com';
+  static const String baseUrl = 'http://localhost:3000';
 
   /// Database name used in API endpoints
   static const String database = 'DemoDB';

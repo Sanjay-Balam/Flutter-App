@@ -1,8 +1,22 @@
-// Enums matching Flutter app
+// Legacy enum for backwards compatibility (will be deprecated)
 export enum MenuCategory {
   MILK_CAKES = 'milkCakes',
   CHEESE_CAKES = 'cheeseCakes',
   CHOCOLATE_BROWNIE = 'chocolateBrownie'
+}
+
+// Category Interface (New Dynamic System)
+export interface Category {
+  id: string;
+  userId: string; // Reference to User._id
+  name: string;
+  description?: string;
+  icon: string; // Emoji or icon identifier
+  color: string; // Hex color code
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export enum ItemSize {
@@ -51,11 +65,12 @@ export interface User {
   updatedAt?: Date;
 }
 
-// Menu Item Interface
+// Menu Item Interface (Updated for Dynamic Categories)
 export interface MenuItem {
   id: string;
   name: string;
-  category: MenuCategory;
+  categoryId: string; // Reference to Category._id (New Dynamic System)
+  category?: MenuCategory; // Legacy field for backwards compatibility
   prices: Record<ItemSize, number>;
   description?: string;
   isAvailable: boolean;
@@ -64,12 +79,14 @@ export interface MenuItem {
   updatedAt?: Date;
 }
 
-// Sale Record Interface
+// Sale Record Interface (Updated for Dynamic Categories)
 export interface SaleRecord {
   id: string;
   menuItemId: string;
   itemName: string;
-  category: MenuCategory;
+  categoryId: string; // Reference to Category._id (New Dynamic System)
+  categoryName: string; // Category name for faster querying
+  category?: MenuCategory; // Legacy field for backwards compatibility
   size: ItemSize;
   unitPrice: number;
   quantity: number;
@@ -187,4 +204,47 @@ export interface UpdateUserRequest {
       sms?: boolean;
     };
   };
+}
+
+// Category Request Body Types
+export interface CreateCategoryRequest {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  userId: string;
+}
+
+export interface UpdateCategoryRequest {
+  name?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+// Category Response Types
+export interface CategoryWithCount extends Category {
+  menuItemsCount: number;
+}
+
+// Updated Analytics Types for Dynamic Categories
+export interface DynamicCategoryAnalytics {
+  categoryId: string;
+  categoryName: string;
+  sales: number;
+  revenue: number;
+  percentage: number;
+}
+
+export interface UpdatedAnalyticsResponse {
+  revenue: RevenueAnalytics;
+  sales: SalesAnalytics;
+  categories: DynamicCategoryAnalytics[];
+  dailyTrends: Array<{
+    date: string;
+    sales: number;
+    revenue: number;
+  }>;
 } 

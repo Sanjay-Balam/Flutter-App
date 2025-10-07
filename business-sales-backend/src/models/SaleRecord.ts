@@ -18,10 +18,16 @@ const SaleRecordSchema = new Schema({
     required: true,
     trim: true
   },
-  category: {
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'Categories'
+  },
+  categoryName: {
     type: String,
     required: true,
-    enum: Object.values(MenuCategory)
+    trim: true,
+    maxlength: 50
   },
   size: {
     type: String,
@@ -66,13 +72,19 @@ interface ISaleRecord extends SaleRecordSchemaType, Document { }
 // Indexes for analytics and queries
 SaleRecordSchema.index({ timestamp: -1 }); // Latest sales first
 SaleRecordSchema.index({ menuItemId: 1 });
+SaleRecordSchema.index({ categoryId: 1 }); // New index for dynamic categories
+SaleRecordSchema.index({ userId: 1, categoryId: 1 }); // User's category sales
+SaleRecordSchema.index({ timestamp: 1, categoryId: 1 }); // Compound index for analytics
+SaleRecordSchema.index({ categoryName: 1 }); // Text-based category queries
+
+// Legacy indexes (to be removed after migration)
 SaleRecordSchema.index({ category: 1 });
-SaleRecordSchema.index({ timestamp: 1, category: 1 }); // Compound index for analytics
+SaleRecordSchema.index({ timestamp: 1, category: 1 });
 
 // Create date-based indexes for faster analytics
 SaleRecordSchema.index({ 
   timestamp: 1,
-  category: 1,
+  categoryId: 1,
   totalAmount: 1 
 });
 

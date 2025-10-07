@@ -14,10 +14,16 @@ const MenuItemSchema = new Schema({
     trim: true,
     maxlength: 100
   },
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'Categories'
+  },
+  // Legacy field for backwards compatibility (to be removed after migration)
   category: {
     type: String,
-    required: true,
-    enum: Object.values(MenuCategory)
+    enum: Object.values(MenuCategory),
+    required: false // Made optional for migration
   },
   prices: {
     type: Map,
@@ -30,6 +36,11 @@ const MenuItemSchema = new Schema({
       },
       message: 'At least one price must be provided'
     }
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 300
   },
   isAvailable: {
     type: Boolean,
@@ -46,8 +57,12 @@ type MenuItemSchemaType = InferSchemaType<typeof MenuItemSchema>;
 interface IMenuItem extends MenuItemSchemaType, Document { }
 
 // Indexes for better query performance
-MenuItemSchema.index({ category: 1 });
+MenuItemSchema.index({ categoryId: 1 }); // New index for dynamic categories
+MenuItemSchema.index({ userId: 1, categoryId: 1 }); // Compound index for user's category items
 MenuItemSchema.index({ isAvailable: 1 });
 MenuItemSchema.index({ name: 'text', description: 'text' });
+// Legacy index (to be removed after migration)
+MenuItemSchema.index({ category: 1 });
+
 
 export default mongoose.model<IMenuItem>('MenuItems', MenuItemSchema); 
