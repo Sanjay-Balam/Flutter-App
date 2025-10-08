@@ -8,6 +8,7 @@ import '../providers/sales_provider.dart';
 import '../widgets/menu_item_card.dart';
 import '../widgets/sell_dialog.dart';
 import '../widgets/menu_item_form_dialog.dart';
+import '../widgets/category_form_dialog.dart';
 
 class MenuScreen extends ConsumerStatefulWidget {
   const MenuScreen({super.key});
@@ -378,7 +379,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                   label: const Text('Add Item'),
                   tooltip: 'Add new menu item',
                 )
-              : null,
+              : FloatingActionButton.extended(
+                  onPressed: _showCreateCategoryDialog,
+                  icon: const Icon(Icons.add),
+                  label: const Text('New Category'),
+                  tooltip: 'Create new category',
+                  backgroundColor: Colors.green,
+                ),
         );
       },
       loading: () => Scaffold(
@@ -553,6 +560,14 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
         dialogTitle: 'Create New Menu Item',
         initialCategoryId: initialCategoryId,
       ),
+    );
+  }
+
+  void _showCreateCategoryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          const CategoryFormDialog(dialogTitle: 'Create New Category'),
     );
   }
 }
