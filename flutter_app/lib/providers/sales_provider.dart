@@ -37,6 +37,7 @@ class SalesNotifier extends AsyncNotifier<List<SaleRecord>> {
   // Add a new sale
   Future<void> addSale({
     required MenuItem menuItem,
+    required String categoryName, // Category name must be provided
     required ItemSize size,
     required int quantity,
     String? notes,
@@ -46,6 +47,7 @@ class SalesNotifier extends AsyncNotifier<List<SaleRecord>> {
 
       final newSale = await _salesApiService.createSale(
         menuItem: menuItem,
+        categoryName: categoryName,
         size: size,
         quantity: quantity,
         userId: userId,

@@ -582,18 +582,18 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
       );
     }
 
-    // Group sales by category
-    final Map<MenuCategory, double> categoryRevenue = {};
+    // Group sales by category name
+    final Map<String, double> categoryRevenue = {};
     for (final sale in monthSales) {
-      categoryRevenue[sale.category] =
-          (categoryRevenue[sale.category] ?? 0) + sale.totalAmount;
+      categoryRevenue[sale.categoryName] =
+          (categoryRevenue[sale.categoryName] ?? 0) + sale.totalAmount;
     }
 
     final sections = categoryRevenue.entries.map((entry) {
-      final color = _getCategoryColor(entry.key);
+      final color = _getCategoryColorByName(entry.key);
       return PieChartSectionData(
         value: entry.value,
-        title: '${entry.key.displayName}\n₹${entry.value.toInt()}',
+        title: '${entry.key}\n₹${entry.value.toInt()}',
         color: color,
         radius: 60,
         titleStyle: const TextStyle(
@@ -622,6 +622,22 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
       case MenuCategory.chocolateBrownie:
         return Colors.green;
     }
+  }
+
+  Color _getCategoryColorByName(String categoryName) {
+    // Generate a consistent color based on category name hash
+    final hash = categoryName.hashCode;
+    final colors = [
+      Colors.blue,
+      Colors.orange,
+      Colors.green,
+      Colors.purple,
+      Colors.red,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+    ];
+    return colors[hash.abs() % colors.length];
   }
 
   Widget _buildReportCard(

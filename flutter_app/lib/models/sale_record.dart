@@ -9,7 +9,9 @@ class SaleRecord {
   final String id;
   final String menuItemId;
   final String itemName;
-  final MenuCategory category;
+  final String categoryId; // Reference to Category._id (New Dynamic System)
+  final String categoryName; // Category name for faster querying
+  final MenuCategory? category; // Legacy field for backwards compatibility
   final ItemSize size;
   final double unitPrice;
   final int quantity;
@@ -24,7 +26,9 @@ class SaleRecord {
     required this.id,
     required this.menuItemId,
     required this.itemName,
-    required this.category,
+    required this.categoryId,
+    required this.categoryName,
+    this.category,
     required this.size,
     required this.unitPrice,
     required this.quantity,
@@ -49,6 +53,12 @@ class SaleRecord {
     if (processedJson.containsKey('menuItemId') &&
         processedJson['menuItemId'] is Map) {
       processedJson['menuItemId'] = processedJson['menuItemId']['\$oid'];
+    }
+
+    // Convert categoryId ObjectId to string
+    if (processedJson.containsKey('categoryId') &&
+        processedJson['categoryId'] is Map) {
+      processedJson['categoryId'] = processedJson['categoryId']['\$oid'];
     }
 
     // Convert userId ObjectId to string
@@ -87,6 +97,7 @@ class SaleRecord {
   factory SaleRecord.fromMenuItem({
     required String id,
     required MenuItem menuItem,
+    required String categoryName, // Must be provided from Category object
     required ItemSize size,
     required int quantity,
     required DateTime timestamp,
@@ -100,7 +111,8 @@ class SaleRecord {
       id: id,
       menuItemId: menuItem.id,
       itemName: menuItem.name,
-      category: menuItem.category,
+      categoryId: menuItem.categoryId,
+      categoryName: categoryName,
       size: size,
       unitPrice: unitPrice,
       quantity: quantity,

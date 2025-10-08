@@ -11,7 +11,8 @@ class MenuItem {
   @JsonKey(name: '_id')
   final String id;
   final String name;
-  final MenuCategory category;
+  final String categoryId; // Reference to Category._id (New Dynamic System)
+  final MenuCategory? category; // Legacy field for backwards compatibility
   final Map<ItemSize, double> prices; // Size -> Price mapping
   final String? description;
   final bool isAvailable;
@@ -22,7 +23,8 @@ class MenuItem {
   const MenuItem({
     required this.id,
     required this.name,
-    required this.category,
+    required this.categoryId,
+    this.category,
     required this.prices,
     this.description,
     this.isAvailable = true,
@@ -34,33 +36,41 @@ class MenuItem {
   factory MenuItem.fromJson(Map<String, dynamic> json) {
     // Handle the backend response format
     Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
-    
+
     // Convert MongoDB _id to id
     if (processedJson.containsKey('_id') && processedJson['_id'] is Map) {
       processedJson['_id'] = processedJson['_id']['\$oid'];
     }
-    
+
+    // Convert categoryId ObjectId to string
+    if (processedJson.containsKey('categoryId') &&
+        processedJson['categoryId'] is Map) {
+      processedJson['categoryId'] = processedJson['categoryId']['\$oid'];
+    }
+
     // Convert userId ObjectId to string
     if (processedJson.containsKey('userId') && processedJson['userId'] is Map) {
       processedJson['userId'] = processedJson['userId']['\$oid'];
     }
-    
+
     // Convert date strings to DateTime
     if (processedJson.containsKey('createdAt')) {
-      if (processedJson['createdAt'] is Map && processedJson['createdAt'].containsKey('\$date')) {
+      if (processedJson['createdAt'] is Map &&
+          processedJson['createdAt'].containsKey('\$date')) {
         processedJson['createdAt'] = processedJson['createdAt']['\$date'];
       }
     }
-    
+
     if (processedJson.containsKey('updatedAt')) {
-      if (processedJson['updatedAt'] is Map && processedJson['updatedAt'].containsKey('\$date')) {
+      if (processedJson['updatedAt'] is Map &&
+          processedJson['updatedAt'].containsKey('\$date')) {
         processedJson['updatedAt'] = processedJson['updatedAt']['\$date'];
       }
     }
-    
+
     return _$MenuItemFromJson(processedJson);
   }
-  
+
   Map<String, dynamic> toJson() => _$MenuItemToJson(this);
 
   // Helper method to get price by size

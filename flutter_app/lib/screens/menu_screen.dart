@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
+import '../providers/category_provider.dart';
 import '../providers/sales_provider.dart';
 import '../widgets/menu_item_card.dart';
 import '../widgets/sell_dialog.dart';
@@ -17,198 +18,259 @@ class MenuScreen extends ConsumerStatefulWidget {
 
 class _MenuScreenState extends ConsumerState<MenuScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
   final currencyFormatter = NumberFormat.currency(
     symbol: '₹',
     decimalDigits: 0,
   );
 
   @override
-  void initState() {
-    super.initState();
-    final categories = MenuCategory.values;
-    _tabController = TabController(length: categories.length, vsync: this);
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(menuCategoriesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
     final todaysRevenue = ref.watch(todaysRevenueProvider);
     final menuItemsAsync = ref.watch(menuItemsProvider);
     final isLoading = ref.watch(isMenuItemsLoadingProvider);
     final error = ref.watch(menuItemsErrorProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu'),
-        centerTitle: true,
-        actions: [
-          // Refresh button
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: isLoading
-                ? null
-                : () => ref.read(menuItemsProvider.notifier).refresh(),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: categories.map((category) {
-            return Tab(
-              text: category.displayName,
-              icon: Text(category.icon, style: const TextStyle(fontSize: 20)),
-            );
-          }).toList(),
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-        ),
-      ),
-      body: Column(
-        children: [
-          // Today's Revenue Banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Theme.of(context).primaryColor,
-                  Theme.of(context).primaryColor.withOpacity(0.8),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  'Today\'s Revenue',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  currencyFormatter.format(todaysRevenue),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return categoriesAsync.when(
+      data: (categories) {
+        // Initialize or update tab controller based on categories length
+        if (_tabController == null ||
+            _tabController!.length != categories.length) {
+          _tabController?.dispose();
+          _tabController = TabController(
+            length: categories.length,
+            vsync: this,
+          );
+        }
 
-          // Loading indicator
-          if (isLoading && !menuItemsAsync.hasValue)
-            const Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Loading menu items...'),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Menu'),
+            centerTitle: true,
+            actions: [
+              // Refresh button
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        ref.read(menuItemsProvider.notifier).refresh();
+                        ref.read(categoriesProvider.notifier).refresh();
+                      },
+              ),
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: categories.map((category) {
+                return Tab(
+                  text: category.name,
+                  icon: Text(
+                    category.icon,
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                );
+              }).toList(),
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+            ),
+          ),
+          body: Column(
+            children: [
+              // Today's Revenue Banner
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColor.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
-              ),
-            )
-          // Error state
-          else if (error != null && !menuItemsAsync.hasValue)
-            Expanded(
-              child: Center(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load menu items',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    const Text(
+                      'Today\'s Revenue',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      error,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () =>
-                          ref.read(menuItemsProvider.notifier).refresh(),
-                      child: const Text('Retry'),
+                      currencyFormatter.format(todaysRevenue),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
-            )
-          // Menu Items Tabs
-          else
-            Expanded(
-              child: Stack(
-                children: [
-                  TabBarView(
-                    controller: _tabController,
-                    children: categories.map((category) {
-                      return _buildCategoryView(category);
-                    }).toList(),
-                  ),
-                  // Loading overlay when refreshing
-                  if (isLoading && menuItemsAsync.hasValue)
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        height: 3,
-                        child: const LinearProgressIndicator(),
-                      ),
+
+              // Loading indicator
+              if (isLoading && !menuItemsAsync.hasValue)
+                const Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading menu items...'),
+                      ],
                     ),
-                ],
-              ),
-            ),
-        ],
+                  ),
+                )
+              // Error state
+              else if (error != null && !menuItemsAsync.hasValue)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Failed to load menu items',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () =>
+                              ref.read(menuItemsProvider.notifier).refresh(),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              // Menu Items Tabs
+              else
+                Expanded(
+                  child: Stack(
+                    children: [
+                      TabBarView(
+                        controller: _tabController,
+                        children: categories.map((category) {
+                          return _buildCategoryView(category);
+                        }).toList(),
+                      ),
+                      // Loading overlay when refreshing
+                      if (isLoading && menuItemsAsync.hasValue)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: 3,
+                            child: const LinearProgressIndicator(),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showCreateDialog(null),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Item'),
+            tooltip: 'Add new menu item',
+          ),
+        );
+      },
+      loading: () => Scaffold(
+        appBar: AppBar(title: const Text('Menu'), centerTitle: true),
+        body: const Center(child: CircularProgressIndicator()),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateDialog(),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Item'),
-        tooltip: 'Add new menu item',
+      error: (error, _) => Scaffold(
+        appBar: AppBar(title: const Text('Menu'), centerTitle: true),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text(
+                'Failed to load categories',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () =>
+                    ref.read(categoriesProvider.notifier).refresh(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildCategoryView(MenuCategory category) {
-    final categoryItemsAsync = ref.watch(menuItemsByCategoryProvider(category));
+  Widget _buildCategoryView(category) {
+    final categoryItemsAsync = ref.watch(
+      menuItemsByCategoryIdProvider(category.id),
+    );
 
     return categoryItemsAsync.when(
       data: (categoryItems) {
         if (categoryItems.isEmpty) {
-          return const Center(
-            child: Text(
-              'No items available in this category',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(category.icon, style: const TextStyle(fontSize: 48)),
+                const SizedBox(height: 16),
+                Text(
+                  'No items in ${category.name}',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _showCreateDialog(category.id),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add First Item'),
+                ),
+              ],
             ),
           );
         }
@@ -233,7 +295,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Error loading ${category.displayName}',
+              'Error loading ${category.name}',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -260,10 +322,25 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
         menuItem: menuItem,
         onSell: (size, quantity, notes) async {
           try {
+            // Find the category name from categories provider
+            final categoriesAsync = ref.read(categoriesProvider);
+            final categoryName = categoriesAsync.when(
+              data: (categories) {
+                final category = categories.firstWhere(
+                  (cat) => cat.id == menuItem.categoryId,
+                  orElse: () => categories.first,
+                );
+                return category.name;
+              },
+              loading: () => 'Unknown',
+              error: (_, __) => 'Unknown',
+            );
+
             await ref
                 .read(salesProvider.notifier)
                 .addSale(
                   menuItem: menuItem,
+                  categoryName: categoryName,
                   size: size,
                   quantity: quantity,
                   notes: notes,
@@ -298,11 +375,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
     );
   }
 
-  void _showCreateDialog() {
+  void _showCreateDialog(String? initialCategoryId) {
     showDialog(
       context: context,
-      builder: (context) =>
-          const MenuItemFormDialog(dialogTitle: 'Create New Menu Item'),
+      builder: (context) => MenuItemFormDialog(
+        dialogTitle: 'Create New Menu Item',
+        initialCategoryId: initialCategoryId,
+      ),
     );
   }
 }

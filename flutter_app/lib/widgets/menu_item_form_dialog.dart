@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/menu_item.dart';
+import '../models/category.dart';
 import '../providers/menu_provider.dart';
+import '../providers/category_provider.dart';
 import '../providers/user_provider.dart';
 
 class MenuItemFormDialog extends ConsumerStatefulWidget {
   final MenuItem? menuItem; // null for create, MenuItem for edit
   final String dialogTitle;
+  final String? initialCategoryId; // For pre-selecting category when creating
 
   const MenuItemFormDialog({
     super.key,
     required this.dialogTitle,
     this.menuItem,
+    this.initialCategoryId,
   });
 
   @override
@@ -27,16 +31,9 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
   final _largePriceController = TextEditingController();
   final _regularPriceController = TextEditingController();
 
-  MenuCategory _selectedCategory = MenuCategory.milkCakes;
+  String? _selectedCategoryId;
   bool _isAvailable = true;
   bool _isLoading = false;
-
-  // Price configuration based on category
-  final Map<MenuCategory, List<ItemSize>> _categorySizes = {
-    MenuCategory.milkCakes: [ItemSize.regular],
-    MenuCategory.cheeseCakes: [ItemSize.small, ItemSize.large],
-    MenuCategory.chocolateBrownie: [ItemSize.regular],
-  };
 
   @override
   void initState() {
@@ -47,7 +44,7 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
       final item = widget.menuItem!;
       _nameController.text = item.name;
       _descriptionController.text = item.description ?? '';
-      _selectedCategory = item.category;
+      _selectedCategoryId = item.categoryId;
       _isAvailable = item.isAvailable;
 
       // Populate price fields based on category
@@ -78,140 +75,207 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final availableSizes =
-        _categorySizes[_selectedCategory] ?? [ItemSize.regular];
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    // Set initial category if provided and not already set
+    if (_selectedCategoryId == null && widget.initialCategoryId != null) {
+      _selectedCategoryId = widget.initialCategoryId;
+    }
 
     return AlertDialog(
       title: Text(widget.dialogTitle),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Name Field
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Item Name *',
-                  hintText: 'e.g., Chocolate Brownie',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter item name';
-                  }
-                  if (value.trim().length < 2) {
-                    return 'Name must be at least 2 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+      content: categoriesAsync.when(
+        data: (categories) {
+          // Set first category as default if none selected
+          if (_selectedCategoryId == null && categories.isNotEmpty) {
+            _selectedCategoryId = categories.first.id;
+          }
 
-              // Category Dropdown
-              DropdownButtonFormField<MenuCategory>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category *',
-                  border: OutlineInputBorder(),
-                ),
-                items: MenuCategory.values.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Row(
-                      children: [
-                        Text(
-                          category.icon,
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(category.displayName),
-                      ],
+          return Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name Field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Item Name *',
+                      hintText: 'e.g., Chocolate Brownie',
+                      border: OutlineInputBorder(),
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedCategory = value;
-                      // Clear price fields when category changes
-                      _smallPriceController.clear();
-                      _largePriceController.clear();
-                      _regularPriceController.clear();
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter item name';
+                      }
+                      if (value.trim().length < 2) {
+                        return 'Name must be at least 2 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
 
-              // Price Fields (dynamic based on category)
-              Text('Prices *', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              ...availableSizes
-                  .map(
-                    (size) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: TextFormField(
-                        controller: _getPriceController(size),
-                        decoration: InputDecoration(
-                          labelText: '${size.displayName} Price (₹)',
-                          hintText: 'Enter price in rupees',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.currency_rupee),
+                  // Category Dropdown (Dynamic)
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategoryId,
+                    decoration: const InputDecoration(
+                      labelText: 'Category *',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: categories.map((category) {
+                      return DropdownMenuItem(
+                        value: category.id,
+                        child: Row(
+                          children: [
+                            Text(
+                              category.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(category.name),
+                          ],
                         ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter ${size.displayName.toLowerCase()} price';
-                          }
-                          final price = int.tryParse(value);
-                          if (price == null || price <= 0) {
-                            return 'Please enter a valid price';
-                          }
-                          if (price > 10000) {
-                            return 'Price must be less than ₹10,000';
-                          }
-                          return null;
-                        },
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedCategoryId = value;
+                        });
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a category';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Price Fields (all sizes available)
+                  Text(
+                    'Prices *',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Regular Price (always shown)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextFormField(
+                      controller: _regularPriceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Regular Price (₹) *',
+                        hintText: 'Enter price in rupees',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.currency_rupee),
                       ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter regular price';
+                        }
+                        final price = int.tryParse(value);
+                        if (price == null || price <= 0) {
+                          return 'Please enter a valid price';
+                        }
+                        if (price > 10000) {
+                          return 'Price must be less than ₹10,000';
+                        }
+                        return null;
+                      },
                     ),
-                  )
-                  .toList(),
+                  ),
 
-              // Description Field
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  hintText: 'Brief description of the item',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                maxLength: 200,
-              ),
-              const SizedBox(height: 16),
+                  // Small Price (optional)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextFormField(
+                      controller: _smallPriceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Small Price (₹) - Optional',
+                        hintText: 'Leave empty if not applicable',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.currency_rupee),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ),
 
-              // Availability Switch
-              SwitchListTile(
-                title: const Text('Available for Sale'),
-                subtitle: Text(
-                  _isAvailable
-                      ? 'Customers can order this item'
-                      : 'Item is temporarily unavailable',
-                ),
-                value: _isAvailable,
-                onChanged: (value) {
-                  setState(() {
-                    _isAvailable = value;
-                  });
-                },
+                  // Large Price (optional)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: TextFormField(
+                      controller: _largePriceController,
+                      decoration: const InputDecoration(
+                        labelText: 'Large Price (₹) - Optional',
+                        hintText: 'Leave empty if not applicable',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.currency_rupee),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                  ),
+
+                  // Description Field
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Description (Optional)',
+                      hintText: 'Brief description of the item',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    maxLength: 200,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Availability Switch
+                  SwitchListTile(
+                    title: const Text('Available for Sale'),
+                    subtitle: Text(
+                      _isAvailable
+                          ? 'Customers can order this item'
+                          : 'Item is temporarily unavailable',
+                    ),
+                    value: _isAvailable,
+                    onChanged: (value) {
+                      setState(() {
+                        _isAvailable = value;
+                      });
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
+          );
+        },
+        loading: () => const SizedBox(
+          width: 400,
+          height: 400,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, _) => SizedBox(
+          width: 400,
+          height: 200,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text('Failed to load categories'),
+                const SizedBox(height: 8),
+                Text(error.toString(), style: const TextStyle(fontSize: 12)),
+              ],
+            ),
           ),
         ),
       ),
@@ -234,17 +298,6 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
     );
   }
 
-  TextEditingController _getPriceController(ItemSize size) {
-    switch (size) {
-      case ItemSize.small:
-        return _smallPriceController;
-      case ItemSize.large:
-        return _largePriceController;
-      case ItemSize.regular:
-        return _regularPriceController;
-    }
-  }
-
   void _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -258,15 +311,29 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
         throw Exception('User not authenticated');
       }
 
+      if (_selectedCategoryId == null) {
+        throw Exception('Please select a category');
+      }
+
       // Build prices map
-      final availableSizes =
-          _categorySizes[_selectedCategory] ?? [ItemSize.regular];
       final Map<ItemSize, double> prices = {};
 
-      for (final size in availableSizes) {
-        final controller = _getPriceController(size);
-        final price = double.tryParse(controller.text) ?? 0;
-        prices[size] = price;
+      // Always include regular price (required)
+      final regularPrice = double.tryParse(_regularPriceController.text);
+      if (regularPrice != null && regularPrice > 0) {
+        prices[ItemSize.regular] = regularPrice;
+      }
+
+      // Add small price if provided
+      final smallPrice = double.tryParse(_smallPriceController.text);
+      if (smallPrice != null && smallPrice > 0) {
+        prices[ItemSize.small] = smallPrice;
+      }
+
+      // Add large price if provided
+      final largePrice = double.tryParse(_largePriceController.text);
+      if (largePrice != null && largePrice > 0) {
+        prices[ItemSize.large] = largePrice;
       }
 
       // Create MenuItem object
@@ -275,7 +342,7 @@ class _MenuItemFormDialogState extends ConsumerState<MenuItemFormDialog> {
             widget.menuItem?.id ??
             '', // Will be generated by backend for new items
         name: _nameController.text.trim(),
-        category: _selectedCategory,
+        categoryId: _selectedCategoryId!,
         prices: prices,
         description: _descriptionController.text.trim().isEmpty
             ? null

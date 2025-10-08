@@ -116,32 +116,13 @@ class MenuItemsListWidget extends ConsumerWidget {
                     );
                   }
 
-                  // Group items by category for display
-                  final groupedItems = <MenuCategory, List<MenuItem>>{};
-                  for (final item in menuItems) {
-                    groupedItems.putIfAbsent(item.category, () => []).add(item);
-                  }
-
-                  return ListView(
-                    children: groupedItems.entries.map((entry) {
-                      final category = entry.key;
-                      final items = entry.value;
-
-                      return ExpansionTile(
-                        title: Text(
-                          '${category.displayName} (${items.length})',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        leading: Text(
-                          category.icon,
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        initiallyExpanded: true,
-                        children: items
-                            .map((item) => _buildMenuItem(context, item))
-                            .toList(),
-                      );
-                    }).toList(),
+                  // Display all items in a simple list
+                  return ListView.builder(
+                    itemCount: menuItems.length,
+                    itemBuilder: (context, index) {
+                      final item = menuItems[index];
+                      return _buildMenuItem(context, item);
+                    },
                   );
                 },
               ),

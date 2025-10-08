@@ -91,7 +91,20 @@ final menuItemsProvider =
       return MenuItemsNotifier();
     });
 
-// Menu items by category provider (computed from main provider)
+// Menu items by category ID provider (computed from main provider)
+final menuItemsByCategoryIdProvider =
+    Provider.family<AsyncValue<List<MenuItem>>, String>((ref, categoryId) {
+      final menuItemsAsync = ref.watch(menuItemsProvider);
+      return menuItemsAsync.when(
+        data: (items) => AsyncValue.data(
+          items.where((item) => item.categoryId == categoryId).toList(),
+        ),
+        loading: () => const AsyncValue.loading(),
+        error: (error, stackTrace) => AsyncValue.error(error, stackTrace),
+      );
+    });
+
+// Legacy: Menu items by category provider (for backwards compatibility)
 final menuItemsByCategoryProvider =
     Provider.family<AsyncValue<List<MenuItem>>, MenuCategory>((ref, category) {
       final menuItemsAsync = ref.watch(menuItemsProvider);

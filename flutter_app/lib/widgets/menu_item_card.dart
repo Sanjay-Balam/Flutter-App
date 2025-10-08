@@ -62,20 +62,9 @@ class MenuItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Category icon and menu
+                // Menu button
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        menuItem.category.icon,
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                    ),
                     // More menu button
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert),

@@ -265,12 +265,7 @@ class SalesHistoryScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        sale.category.icon,
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        sale.category.displayName,
+                        sale.categoryName,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,

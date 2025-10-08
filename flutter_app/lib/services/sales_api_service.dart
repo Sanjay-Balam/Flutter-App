@@ -19,6 +19,7 @@ class SalesApiService {
   /// Create a new sale record
   Future<SaleRecord> createSale({
     required MenuItem menuItem,
+    required String categoryName, // Category name must be provided
     required ItemSize size,
     required int quantity,
     required String userId,
@@ -35,7 +36,8 @@ class SalesApiService {
         'menuItemId': menuItem.id,
         'userId': userId,
         'itemName': menuItem.name,
-        'category': menuItem.category.name,
+        'categoryId': menuItem.categoryId,
+        'categoryName': categoryName,
         'size': size.name,
         'unitPrice': unitPrice,
         'quantity': quantity,
