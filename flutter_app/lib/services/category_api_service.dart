@@ -15,14 +15,23 @@ class CategoryApiService {
   // Headers for API requests - using centralized config
   Map<String, String> get _headers => AppConfig.defaultHeaders;
 
-  /// Fetch all categories for a specific user
+  /// Fetch all categories for a specific user using searchresource
   Future<List<Category>> getCategoriesForUser(String userId) async {
     try {
       final url = Uri.parse(
-        '${AppConfig.baseUrl}/${AppConfig.database}/getcategories/$userId',
+        '${AppConfig.baseUrl}/${AppConfig.database}/searchresource/Categories',
       );
 
-      final response = await _client.get(url, headers: _headers);
+      final requestBody = {
+        'filter': {'userId': userId, 'isActive': true},
+        'sort': {'sortOrder': 1, 'name': 1},
+      };
+
+      final response = await _client.post(
+        url,
+        headers: _headers,
+        body: jsonEncode(requestBody),
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -43,14 +52,45 @@ class CategoryApiService {
     }
   }
 
-  /// Fetch categories with menu item counts
+  /// Fetch categories with menu item counts using aggregation
   Future<List<CategoryWithCount>> getCategoriesWithCount(String userId) async {
     try {
       final url = Uri.parse(
-        '${AppConfig.baseUrl}/${AppConfig.database}/getcategorieswithcount/$userId',
+        '${AppConfig.baseUrl}/${AppConfig.database}/aggregatetable/Categories',
       );
 
-      final response = await _client.get(url, headers: _headers);
+      final aggregationPipeline = [
+        {
+          '\$match': {'userId': userId, 'isActive': true},
+        },
+        {
+          '\$lookup': {
+            'from': 'MenuItems',
+            'localField': '_id',
+            'foreignField': 'categoryId',
+            'as': 'menuItems',
+          },
+        },
+        {
+          '\$addFields': {
+            'menuItemsCount': {'\$size': '\$menuItems'},
+          },
+        },
+        {
+          '\$project': {
+            'menuItems': 0, // Remove the array, we only need the count
+          },
+        },
+        {
+          '\$sort': {'sortOrder': 1, 'name': 1},
+        },
+      ];
+
+      final response = await _client.post(
+        url,
+        headers: _headers,
+        body: jsonEncode(aggregationPipeline),
+      );
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);

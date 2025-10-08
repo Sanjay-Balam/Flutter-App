@@ -16,9 +16,10 @@ class MenuScreen extends ConsumerStatefulWidget {
   ConsumerState<MenuScreen> createState() => _MenuScreenState();
 }
 
-class _MenuScreenState extends ConsumerState<MenuScreen>
-    with SingleTickerProviderStateMixin {
-  TabController? _tabController;
+class _MenuScreenState extends ConsumerState<MenuScreen> {
+  String? _selectedCategoryId;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   final currencyFormatter = NumberFormat.currency(
     symbol: '₹',
     decimalDigits: 0,
@@ -26,7 +27,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
 
   @override
   void dispose() {
-    _tabController?.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -40,15 +41,13 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
 
     return categoriesAsync.when(
       data: (categories) {
-        // Initialize or update tab controller based on categories length
-        if (_tabController == null ||
-            _tabController!.length != categories.length) {
-          _tabController?.dispose();
-          _tabController = TabController(
-            length: categories.length,
-            vsync: this,
+        // Filter categories based on search query
+        final filteredCategories = categories.where((category) {
+          if (_searchQuery.isEmpty) return true;
+          return category.name.toLowerCase().contains(
+            _searchQuery.toLowerCase(),
           );
-        }
+        }).toList();
 
         return Scaffold(
           appBar: AppBar(
@@ -66,21 +65,6 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
                       },
               ),
             ],
-            bottom: TabBar(
-              controller: _tabController,
-              tabs: categories.map((category) {
-                return Tab(
-                  text: category.name,
-                  icon: Text(
-                    category.icon,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                );
-              }).toList(),
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-            ),
           ),
           body: Column(
             children: [
@@ -88,7 +72,7 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.all(16),
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -128,8 +112,139 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
                 ),
               ),
 
+              // Category Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search categories...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                _searchController.clear();
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+
+              // Category Grid/List
+              if (_selectedCategoryId == null)
+                Expanded(
+                  child: filteredCategories.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No categories found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
+                          padding: const EdgeInsets.all(16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.85,
+                              ),
+                          itemCount: filteredCategories.length,
+                          itemBuilder: (context, index) {
+                            final category = filteredCategories[index];
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategoryId = category.id;
+                                  _searchQuery = '';
+                                  _searchController.clear();
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey[300]!,
+                                    width: 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      category.icon,
+                                      style: const TextStyle(fontSize: 40),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: Text(
+                                        category.name,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                )
               // Loading indicator
-              if (isLoading && !menuItemsAsync.hasValue)
+              else if (isLoading && !menuItemsAsync.hasValue)
                 const Expanded(
                   child: Center(
                     child: Column(
@@ -175,16 +290,66 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
                     ),
                   ),
                 )
-              // Menu Items Tabs
-              else
+              // Selected Category Header with Back Button
+              else if (_selectedCategoryId != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey[300]!),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () {
+                          setState(() {
+                            _selectedCategoryId = null;
+                          });
+                        },
+                        tooltip: 'Back to categories',
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        categories
+                            .firstWhere(
+                              (cat) => cat.id == _selectedCategoryId,
+                              orElse: () => categories.first,
+                            )
+                            .icon,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          categories
+                              .firstWhere(
+                                (cat) => cat.id == _selectedCategoryId,
+                                orElse: () => categories.first,
+                              )
+                              .name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: Stack(
                     children: [
-                      TabBarView(
-                        controller: _tabController,
-                        children: categories.map((category) {
-                          return _buildCategoryView(category);
-                        }).toList(),
+                      _buildCategoryView(
+                        categories.firstWhere(
+                          (cat) => cat.id == _selectedCategoryId,
+                          orElse: () => categories.first,
+                        ),
                       ),
                       // Loading overlay when refreshing
                       if (isLoading && menuItemsAsync.hasValue)
@@ -200,14 +365,20 @@ class _MenuScreenState extends ConsumerState<MenuScreen>
                     ],
                   ),
                 ),
+              ] else
+                const Expanded(
+                  child: Center(child: Text('No category selected')),
+                ),
             ],
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showCreateDialog(null),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Item'),
-            tooltip: 'Add new menu item',
-          ),
+          floatingActionButton: _selectedCategoryId != null
+              ? FloatingActionButton.extended(
+                  onPressed: () => _showCreateDialog(_selectedCategoryId),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Item'),
+                  tooltip: 'Add new menu item',
+                )
+              : null,
         );
       },
       loading: () => Scaffold(
