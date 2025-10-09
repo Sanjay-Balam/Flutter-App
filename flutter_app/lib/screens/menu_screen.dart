@@ -9,6 +9,7 @@ import '../widgets/menu_item_card.dart';
 import '../widgets/sell_dialog.dart';
 import '../widgets/menu_item_form_dialog.dart';
 import '../widgets/category_form_dialog.dart';
+import '../widgets/delete_category_dialog.dart';
 
 class MenuScreen extends ConsumerStatefulWidget {
   const MenuScreen({super.key});
@@ -214,27 +215,57 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                     ),
                                   ],
                                 ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                                child: Stack(
                                   children: [
-                                    Text(
-                                      category.icon,
-                                      style: const TextStyle(fontSize: 40),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      child: Text(
-                                        category.name,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                                    // Main content
+                                    Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          category.icon,
+                                          style: const TextStyle(fontSize: 40),
                                         ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                        const SizedBox(height: 8),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                          ),
+                                          child: Text(
+                                            category.name,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    // 3-dot menu button (inside white box)
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          onTap: () {
+                                            _showCategoryOptions(category);
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.more_vert,
+                                              size: 18,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -569,5 +600,107 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
       builder: (context) =>
           const CategoryFormDialog(dialogTitle: 'Create New Category'),
     );
+  }
+
+  void _showCategoryOptions(category) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header with category info
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text(category.icon, style: const TextStyle(fontSize: 32)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (category.description != null)
+                          Text(
+                            category.description,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            // Edit option
+            ListTile(
+              leading: const Icon(Icons.edit, color: Colors.blue),
+              title: const Text('Edit Category'),
+              onTap: () {
+                Navigator.pop(context);
+                _showEditCategoryDialog(category);
+              },
+            ),
+            // Delete option
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete Category'),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteCategoryDialog(category);
+              },
+            ),
+            // Cancel
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCategoryDialog(category) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          CategoryFormDialog(dialogTitle: 'Edit Category', category: category),
+    );
+  }
+
+  void _showDeleteCategoryDialog(category) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => DeleteCategoryDialog(category: category),
+    );
+
+    // If category was deleted and it was selected, clear selection
+    if (result == true && _selectedCategoryId == category.id) {
+      setState(() {
+        _selectedCategoryId = null;
+      });
+    }
   }
 }
