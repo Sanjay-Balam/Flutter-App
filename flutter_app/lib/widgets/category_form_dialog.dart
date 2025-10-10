@@ -28,6 +28,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
   int _sortOrder = 0;
   bool _isActive = true;
   bool _isLoading = false;
+  String _selectedEmojiCategory = 'Food & Bakery'; // Default emoji category
 
   // Predefined color options
   final List<String> _colorOptions = [
@@ -43,49 +44,344 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
     '#AAB7B8', // Gray
   ];
 
-  // Common emoji suggestions
-  final List<String> _emojiSuggestions = [
-    '🍰',
-    '🎂',
-    '🧁',
-    '🍪',
-    '🍩',
-    '🥐',
-    '🍞',
-    '🥖',
-    '🥨',
-    '🥯',
-    '🥞',
-    '🧇',
-    '🍕',
-    '🍔',
-    '🌭',
-    '🥪',
-    '🌮',
-    '🌯',
-    '🥙',
-    '🥗',
-    '🍜',
-    '🍝',
-    '🍛',
-    '🍲',
-    '🥘',
-    '🍱',
-    '🍣',
-    '🍤',
-    '🍙',
-    '🍚',
-    '☕',
-    '🥛',
-    '🍵',
-    '🧃',
-    '🥤',
-    '🧋',
-    '🍹',
-    '🍸',
-    '🧊',
-    '🍷',
-  ];
+  // Emoji suggestions organized by category
+  final Map<String, List<String>> _emojiCategories = {
+    'Food & Bakery': [
+      '🍰',
+      '🎂',
+      '🧁',
+      '🍪',
+      '🍩',
+      '🥐',
+      '🍞',
+      '🥖',
+      '🥨',
+      '🥯',
+      '🥞',
+      '🧇',
+    ],
+    'Meals & Dining': [
+      '🍕',
+      '🍔',
+      '🌭',
+      '🥪',
+      '🌮',
+      '🌯',
+      '🥙',
+      '🥗',
+      '🍜',
+      '🍝',
+      '🍛',
+      '🍲',
+      '🥘',
+      '🍱',
+      '🍣',
+      '🍤',
+      '🍙',
+      '🍚',
+    ],
+    'Beverages': ['☕', '🥛', '🍵', '🧃', '🥤', '🧋', '🍹', '🍸', '🧊', '🍷'],
+    'Clothing & Fashion': [
+      '👕',
+      '👔',
+      '👗',
+      '👘',
+      '👚',
+      '👙',
+      '🩱',
+      '👖',
+      '🧥',
+      '🧤',
+      '🧦',
+      '👞',
+      '👟',
+      '🥾',
+      '👠',
+      '👡',
+      '👢',
+      '🎩',
+      '👒',
+      '🧢',
+      '👑',
+      '💍',
+      '👜',
+      '🎀',
+    ],
+    'Electronics': [
+      '📱',
+      '💻',
+      '⌨️',
+      '🖥️',
+      '🖨️',
+      '🖱️',
+      '💾',
+      '💿',
+      '📀',
+      '🎮',
+      '🕹️',
+      '📷',
+      '📹',
+      '🎥',
+      '📞',
+      '☎️',
+      '📺',
+      '📻',
+      '🎧',
+      '⌚',
+      '🔋',
+      '🔌',
+    ],
+    'Home & Furniture': [
+      '🏠',
+      '🛋️',
+      '🪑',
+      '🛏️',
+      '🚪',
+      '🪟',
+      '🚿',
+      '🛁',
+      '🚽',
+      '🧹',
+      '🧺',
+      '🧴',
+      '🧻',
+      '🕯️',
+      '💡',
+      '🔦',
+      '🪔',
+    ],
+    'Sports & Fitness': [
+      '⚽',
+      '🏀',
+      '🏈',
+      '⚾',
+      '🎾',
+      '🏐',
+      '🏉',
+      '🎱',
+      '🏓',
+      '🏸',
+      '🥊',
+      '🥋',
+      '⛳',
+      '🏹',
+      '🎣',
+      '🤿',
+      '🥇',
+      '🥈',
+      '🥉',
+      '🏆',
+      '🎯',
+      '🛹',
+      '🛼',
+      '⛸️',
+    ],
+    'Beauty & Health': [
+      '💄',
+      '💅',
+      '💋',
+      '👄',
+      '🦷',
+      '👁️',
+      '👃',
+      '💆',
+      '💇',
+      '🧖',
+      '💊',
+      '💉',
+      '🩺',
+      '🩹',
+      '🧴',
+      '🧼',
+      '🧽',
+      '🧻',
+    ],
+    'Office & Stationery': [
+      '📝',
+      '📚',
+      '📖',
+      '📓',
+      '📔',
+      '📒',
+      '📕',
+      '📗',
+      '📘',
+      '📙',
+      '📄',
+      '📃',
+      '📋',
+      '📊',
+      '📈',
+      '📉',
+      '🗂️',
+      '📁',
+      '📂',
+      '🗃️',
+      '✂️',
+      '📌',
+      '📍',
+      '✏️',
+      '✒️',
+      '🖊️',
+      '🖋️',
+      '🖍️',
+      '📏',
+      '📐',
+    ],
+    'Tools & Hardware': [
+      '🔧',
+      '🔨',
+      '⚒️',
+      '🛠️',
+      '⛏️',
+      '🪛',
+      '🔩',
+      '⚙️',
+      '🪚',
+      '🔗',
+      '⛓️',
+      '🧰',
+    ],
+    'Vehicles & Transport': [
+      '🚗',
+      '🚕',
+      '🚙',
+      '🚌',
+      '🚎',
+      '🏎️',
+      '🚓',
+      '🚑',
+      '🚒',
+      '🚐',
+      '🛻',
+      '🚚',
+      '🚛',
+      '🚜',
+      '🛵',
+      '🏍️',
+      '🚲',
+      '🛴',
+      '✈️',
+      '🚁',
+      '🚂',
+      '🚆',
+      '🚇',
+      '🚊',
+    ],
+    'Gifts & Events': [
+      '🎁',
+      '🎈',
+      '🎉',
+      '🎊',
+      '🎀',
+      '🎂',
+      '🎄',
+      '🎃',
+      '🎆',
+      '🎇',
+      '✨',
+      '🎋',
+      '🎍',
+      '🎎',
+      '🎏',
+      '🎐',
+      '🎑',
+    ],
+    'Nature & Plants': [
+      '🌸',
+      '🌺',
+      '🌻',
+      '🌷',
+      '🌹',
+      '🥀',
+      '🌾',
+      '🌿',
+      '☘️',
+      '🍀',
+      '🍁',
+      '🍂',
+      '🍃',
+      '🌱',
+      '🌲',
+      '🌳',
+      '🌴',
+      '🌵',
+      '🌾',
+      '🌿',
+      '🎋',
+      '🎍',
+    ],
+    'Animals & Pets': [
+      '🐶',
+      '🐱',
+      '🐭',
+      '🐹',
+      '🐰',
+      '🦊',
+      '🐻',
+      '🐼',
+      '🐨',
+      '🐯',
+      '🦁',
+      '🐮',
+      '🐷',
+      '🐸',
+      '🐵',
+      '🐔',
+      '🐧',
+      '🐦',
+      '🐤',
+      '🦆',
+      '🦅',
+      '🦉',
+      '🦇',
+      '🐺',
+    ],
+    'Books & Education': [
+      '📚',
+      '📖',
+      '📕',
+      '📗',
+      '📘',
+      '📙',
+      '📓',
+      '📔',
+      '📒',
+      '📝',
+      '🎓',
+      '🎒',
+      '🖊️',
+      '✏️',
+      '📏',
+      '📐',
+      '🔬',
+      '🔭',
+      '🧪',
+      '🧬',
+    ],
+    'Music & Entertainment': [
+      '🎵',
+      '🎶',
+      '🎼',
+      '🎹',
+      '🎸',
+      '🎺',
+      '🎷',
+      '🥁',
+      '🎤',
+      '🎧',
+      '📻',
+      '🎬',
+      '🎭',
+      '🎪',
+      '🎨',
+      '🖼️',
+      '🎯',
+      '🎲',
+      '🎰',
+      '🃏',
+    ],
+  };
 
   @override
   void initState() {
@@ -100,10 +396,8 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
       _selectedColor = category.color;
       _sortOrder = category.sortOrder;
       _isActive = category.isActive;
-    } else {
-      // Default icon for new category
-      _iconController.text = '🍰';
     }
+    // For new categories, leave icon empty - backend will apply default 📦 if not provided
   }
 
   @override
@@ -156,59 +450,103 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
                   TextFormField(
                     controller: _iconController,
                     decoration: const InputDecoration(
-                      labelText: 'Icon (Emoji) *',
-                      hintText: 'Choose an emoji',
+                      labelText: 'Icon (Emoji) - Optional',
+                      hintText: 'Choose an emoji or leave empty',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.emoji_emotions),
                     ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please select an icon';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Popular Emojis:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Choose an emoji:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      // Category dropdown
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: DropdownButton<String>(
+                          value: _selectedEmojiCategory,
+                          underline: const SizedBox(),
+                          isDense: true,
+                          items: _emojiCategories.keys.map((category) {
+                            return DropdownMenuItem(
+                              value: category,
+                              child: Text(
+                                category,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedEmojiCategory = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 180),
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _emojiCategories[_selectedEmojiCategory]!.map(
+                          (emoji) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _iconController.text = emoji;
+                                });
+                              },
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: _iconController.text == emoji
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.grey[300]!,
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    emoji,
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ).toList(),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _emojiSuggestions.map((emoji) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _iconController.text = emoji;
-                          });
-                        },
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: _iconController.text == emoji
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[300]!,
-                              width: 2,
-                            ),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              emoji,
-                              style: const TextStyle(fontSize: 24),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tip: You can also type or paste any emoji in the field above',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ],
               ),
@@ -359,7 +697,7 @@ class _CategoryFormDialogState extends ConsumerState<CategoryFormDialog> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
-        icon: _iconController.text.trim(),
+        icon: _iconController.text.trim(), // Can be empty
         color: _selectedColor,
         isActive: _isActive,
         sortOrder: _sortOrder,

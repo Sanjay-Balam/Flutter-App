@@ -222,23 +222,32 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          category.icon,
-                                          style: const TextStyle(fontSize: 40),
-                                        ),
-                                        const SizedBox(height: 8),
+                                        // Show icon if available
+                                        if (category.icon.isNotEmpty) ...[
+                                          Text(
+                                            category.icon,
+                                            style: const TextStyle(
+                                              fontSize: 40,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                        ],
                                         Padding(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
+                                            horizontal: 8,
                                           ),
                                           child: Text(
                                             category.name,
-                                            style: const TextStyle(
-                                              fontSize: 13,
+                                            style: TextStyle(
+                                              fontSize: category.icon.isEmpty
+                                                  ? 16
+                                                  : 13,
                                               fontWeight: FontWeight.w600,
                                             ),
                                             textAlign: TextAlign.center,
-                                            maxLines: 2,
+                                            maxLines: category.icon.isEmpty
+                                                ? 3
+                                                : 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -467,8 +476,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(category.icon, style: const TextStyle(fontSize: 48)),
-                const SizedBox(height: 16),
+                if (category.icon.isNotEmpty) ...[
+                  Text(category.icon, style: const TextStyle(fontSize: 48)),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   'No items in ${category.name}',
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
@@ -618,8 +629,10 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Text(category.icon, style: const TextStyle(fontSize: 32)),
-                  const SizedBox(width: 12),
+                  if (category.icon.isNotEmpty) ...[
+                    Text(category.icon, style: const TextStyle(fontSize: 32)),
+                    const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
