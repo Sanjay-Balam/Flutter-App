@@ -75,6 +75,9 @@ export interface MenuItem {
   description?: string;
   isAvailable: boolean;
   userId: string; // Reference to User._id
+  stockQuantity?: number; // Stock tracking
+  lowStockThreshold?: number; // Threshold for low stock alerts
+  trackStock?: boolean; // Enable/disable stock tracking for this item
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -247,4 +250,40 @@ export interface UpdatedAnalyticsResponse {
     sales: number;
     revenue: number;
   }>;
+}
+
+// Stock Management Types
+
+export enum StockMovementType {
+  INITIAL = 'INITIAL',           // Initial stock entry
+  RESTOCK = 'RESTOCK',           // Adding new stock
+  SALE = 'SALE',                 // Stock sold
+  ADJUSTMENT = 'ADJUSTMENT',     // Manual adjustment
+  RETURN = 'RETURN',             // Item returned
+  DAMAGE = 'DAMAGE',             // Damaged/expired items
+  TRANSFER = 'TRANSFER'          // Stock transfer
+}
+
+export interface StockHistory {
+  id: string;
+  menuItemId: string;
+  userId: string;
+  movementType: StockMovementType;
+  quantityChange: number; // Can be positive or negative
+  previousQuantity: number;
+  newQuantity: number;
+  reason?: string;
+  saleId?: string; // Reference to SaleRecord if movement was a sale
+  performedBy?: string; // Reference to User who performed the action
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface UpdateStockRequest {
+  quantityChange: number;
+  movementType: StockMovementType;
+  userId: string;
+  reason?: string;
+  performedBy?: string;
+  saleId?: string;
 } 

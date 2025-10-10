@@ -45,6 +45,31 @@ const MenuItemSchema = new Schema({
   isAvailable: {
     type: Boolean,
     default: true
+  },
+  stockQuantity: {
+    type: Number,
+    default: 0,
+    required: false, // Explicitly optional
+    min: [0, 'Stock quantity cannot be negative'],
+    validate: {
+      validator: function(value: number | undefined) {
+        // Allow undefined to use default value
+        if (value === undefined) return true;
+        return Number.isInteger(value) && value >= 0;
+      },
+      message: 'Stock quantity must be a non-negative integer'
+    }
+  },
+  lowStockThreshold: {
+    type: Number,
+    default: 5,
+    required: false, // Explicitly optional
+    min: [0, 'Low stock threshold cannot be negative']
+  },
+  trackStock: {
+    type: Boolean,
+    default: true, // Enable stock tracking by default
+    required: false // Explicitly optional
   }
 }, {
   timestamps: true

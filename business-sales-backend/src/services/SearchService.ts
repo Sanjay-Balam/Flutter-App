@@ -3,13 +3,15 @@ import MenuItemModel from '../models/MenuItem';
 import SaleRecordModel from '../models/SaleRecord';
 import UserModel from '../models/User.schema';
 import CategoryModel from '../models/Category';
+import StockHistoryModel from '../models/StockHistory';
 
 // Model Map for the business sales application
 const modelMap: { [key: string]: mongoose.Model<any> } = {
   MenuItems: MenuItemModel,
   SaleRecords: SaleRecordModel,
   Users: UserModel,
-  Categories: CategoryModel
+  Categories: CategoryModel,
+  StockHistory: StockHistoryModel
 };
 
 // Custom Error Classes
@@ -140,6 +142,7 @@ const searchService = {
       
       const doc = new Model(convertedBody);
       const result = await doc.save();
+      
       return { success: true, data: result };
     } catch (error: any) {
       if (error.name === "ValidationError") {

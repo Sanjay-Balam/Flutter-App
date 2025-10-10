@@ -31,7 +31,19 @@ export const searchRoutes = new Elysia({ prefix: '' })
     }))
   })
 
-  // GET /search/:database/:tableName/:id - Get single resource
+  // GET /:database/getresource/:tableName/:id - Get single resource
+  .get('/:database/getresource/:tableName/:id', async ({ params }) => {
+    const { database, tableName, id } = params;
+    return await searchService.getResource(database, tableName, { id });
+  }, {
+    params: t.Object({
+      database: t.String(),
+      tableName: t.String(),
+      id: t.String()
+    })
+  })
+
+  // GET /search/:database/:tableName/:id - Get single resource (alternative path)
   .get('/:database/searchresource/:tableName/:id', async ({ params }) => {
     const { database, tableName, id } = params;
     return await searchService.getResource(database, tableName, { id });
@@ -187,4 +199,4 @@ export const searchRoutes = new Elysia({ prefix: '' })
     params: t.Object({
       database: t.String()
     })
-  }); 
+  })

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/menu_item.dart';
+import '../screens/stock_history_screen.dart';
 import 'menu_item_form_dialog.dart';
 import 'delete_menu_item_dialog.dart';
+import 'stock_management_dialog.dart';
 
 class MenuItemCard extends StatelessWidget {
   final MenuItem menuItem;
@@ -59,6 +61,44 @@ class MenuItemCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                      // Stock indicator
+                      if (menuItem.isTrackingStock) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              menuItem.isOutOfStock
+                                  ? Icons.remove_circle
+                                  : menuItem.isLowStock
+                                  ? Icons.warning_amber
+                                  : Icons.check_circle,
+                              size: 16,
+                              color: menuItem.isOutOfStock
+                                  ? Colors.red
+                                  : menuItem.isLowStock
+                                  ? Colors.orange
+                                  : Colors.green,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              menuItem.isOutOfStock
+                                  ? 'Out of Stock'
+                                  : menuItem.isLowStock
+                                  ? 'Low Stock (${menuItem.currentStock})'
+                                  : 'Stock: ${menuItem.currentStock}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: menuItem.isOutOfStock
+                                    ? Colors.red
+                                    : menuItem.isLowStock
+                                    ? Colors.orange
+                                    : Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -74,6 +114,12 @@ class MenuItemCard extends StatelessWidget {
                           case 'edit':
                             _showEditDialog(context);
                             break;
+                          case 'stock':
+                            _showStockManagementDialog(context);
+                            break;
+                          case 'history':
+                            _navigateToStockHistory(context);
+                            break;
                           case 'delete':
                             _showDeleteDialog(context);
                             break;
@@ -85,6 +131,25 @@ class MenuItemCard extends StatelessWidget {
                           child: ListTile(
                             leading: Icon(Icons.edit, color: Colors.blue),
                             title: Text('Edit'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'stock',
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.inventory_2,
+                              color: Colors.orange,
+                            ),
+                            title: Text('Manage Stock'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'history',
+                          child: ListTile(
+                            leading: Icon(Icons.history, color: Colors.purple),
+                            title: Text('Stock History'),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
@@ -114,9 +179,11 @@ class MenuItemCard extends StatelessWidget {
                 const SizedBox(width: 16),
                 // Sell Button
                 ElevatedButton.icon(
-                  onPressed: menuItem.isAvailable ? onSell : null,
+                  onPressed: menuItem.isAvailable && menuItem.hasStock
+                      ? onSell
+                      : null,
                   icon: const Icon(Icons.shopping_cart, size: 18),
-                  label: const Text('Sell'),
+                  label: Text(menuItem.isOutOfStock ? 'Out of Stock' : 'Sell'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
@@ -247,6 +314,21 @@ class MenuItemCard extends StatelessWidget {
       context: context,
       builder: (context) =>
           MenuItemFormDialog(dialogTitle: 'Edit Menu Item', menuItem: menuItem),
+    );
+  }
+
+  void _showStockManagementDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => StockManagementDialog(menuItem: menuItem),
+    );
+  }
+
+  void _navigateToStockHistory(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StockHistoryScreen(menuItem: menuItem),
+      ),
     );
   }
 

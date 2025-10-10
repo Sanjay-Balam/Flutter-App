@@ -18,6 +18,9 @@ MenuItem _$MenuItemFromJson(Map<String, dynamic> json) => MenuItem(
   description: json['description'] as String?,
   isAvailable: json['isAvailable'] as bool? ?? true,
   userId: json['userId'] as String?,
+  stockQuantity: (json['stockQuantity'] as num?)?.toInt(),
+  lowStockThreshold: (json['lowStockThreshold'] as num?)?.toInt(),
+  trackStock: json['trackStock'] as bool?,
   createdAt: json['createdAt'] == null
       ? null
       : DateTime.parse(json['createdAt'] as String),
@@ -35,6 +38,9 @@ Map<String, dynamic> _$MenuItemToJson(MenuItem instance) => <String, dynamic>{
   'description': instance.description,
   'isAvailable': instance.isAvailable,
   'userId': instance.userId,
+  'stockQuantity': instance.stockQuantity,
+  'lowStockThreshold': instance.lowStockThreshold,
+  'trackStock': instance.trackStock,
   'createdAt': instance.createdAt?.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
 };

@@ -83,6 +83,64 @@ class _SellDialogState extends State<SellDialog> {
 
             const SizedBox(height: 20),
 
+            // Stock Status Display (if tracking stock)
+            if (widget.menuItem.isTrackingStock) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.menuItem.isOutOfStock
+                      ? Colors.red.shade50
+                      : widget.menuItem.isLowStock
+                      ? Colors.orange.shade50
+                      : Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: widget.menuItem.isOutOfStock
+                        ? Colors.red.shade200
+                        : widget.menuItem.isLowStock
+                        ? Colors.orange.shade200
+                        : Colors.green.shade200,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.menuItem.isOutOfStock
+                          ? Icons.error_outline
+                          : widget.menuItem.isLowStock
+                          ? Icons.warning_amber_outlined
+                          : Icons.check_circle_outline,
+                      color: widget.menuItem.isOutOfStock
+                          ? Colors.red
+                          : widget.menuItem.isLowStock
+                          ? Colors.orange
+                          : Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.menuItem.isOutOfStock
+                            ? 'Out of Stock'
+                            : widget.menuItem.isLowStock
+                            ? 'Low Stock: ${widget.menuItem.currentStock} left'
+                            : 'In Stock: ${widget.menuItem.currentStock} available',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: widget.menuItem.isOutOfStock
+                              ? Colors.red.shade900
+                              : widget.menuItem.isLowStock
+                              ? Colors.orange.shade900
+                              : Colors.green.shade900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // Size Selection
             if (widget.menuItem.hasMultipleSizes()) ...[
               const Text(
@@ -189,12 +247,14 @@ class _SellDialogState extends State<SellDialog> {
                 ),
                 // Increase button
                 IconButton(
-                  onPressed: () {
-                    setState(() {
-                      quantity++;
-                      quantityController.text = quantity.toString();
-                    });
-                  },
+                  onPressed: widget.menuItem.canSellQuantity(quantity + 1)
+                      ? () {
+                          setState(() {
+                            quantity++;
+                            quantityController.text = quantity.toString();
+                          });
+                        }
+                      : null,
                   icon: const Icon(Icons.add_circle_outline),
                   color: Theme.of(context).primaryColor,
                 ),
@@ -262,7 +322,11 @@ class _SellDialogState extends State<SellDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _isProcessingSale ? null : _handleSell,
+                          onPressed:
+                              _isProcessingSale ||
+                                  !widget.menuItem.canSellQuantity(quantity)
+                              ? null
+                              : _handleSell,
                           icon: _isProcessingSale
                               ? const SizedBox(
                                   width: 16,
@@ -276,7 +340,11 @@ class _SellDialogState extends State<SellDialog> {
                                 )
                               : const Icon(Icons.shopping_cart),
                           label: Text(
-                            _isProcessingSale ? 'Processing...' : 'Sell',
+                            _isProcessingSale
+                                ? 'Processing...'
+                                : !widget.menuItem.canSellQuantity(quantity)
+                                ? 'Insufficient Stock'
+                                : 'Sell',
                           ),
                         ),
                       ),

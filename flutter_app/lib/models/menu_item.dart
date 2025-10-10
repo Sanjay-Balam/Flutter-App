@@ -17,6 +17,9 @@ class MenuItem {
   final String? description;
   final bool isAvailable;
   final String? userId; // Backend userId field
+  final int? stockQuantity; // Stock tracking
+  final int? lowStockThreshold; // Threshold for low stock alerts
+  final bool? trackStock; // Enable/disable stock tracking for this item
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -29,6 +32,9 @@ class MenuItem {
     this.description,
     this.isAvailable = true,
     this.userId,
+    this.stockQuantity,
+    this.lowStockThreshold,
+    this.trackStock,
     this.createdAt,
     this.updatedAt,
   });
@@ -86,6 +92,23 @@ class MenuItem {
   // Helper method to check if item has multiple sizes
   bool hasMultipleSizes() {
     return prices.length > 1;
+  }
+
+  // Stock helper methods
+  bool get isTrackingStock => trackStock ?? true;
+
+  bool get hasStock => (stockQuantity ?? 0) > 0;
+
+  bool get isOutOfStock => isTrackingStock && (stockQuantity ?? 0) <= 0;
+
+  bool get isLowStock =>
+      isTrackingStock && (stockQuantity ?? 0) <= (lowStockThreshold ?? 5);
+
+  int get currentStock => stockQuantity ?? 0;
+
+  bool canSellQuantity(int quantity) {
+    if (!isTrackingStock) return true;
+    return currentStock >= quantity;
   }
 }
 

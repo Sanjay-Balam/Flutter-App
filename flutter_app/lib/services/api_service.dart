@@ -135,6 +135,9 @@ class ApiService {
       // Remove id field for creation as backend generates _id
       requestBody.remove('_id');
 
+      // Remove null values to allow backend defaults to be applied
+      requestBody.removeWhere((key, value) => value == null);
+
       final response = await _client.post(
         url,
         headers: _headers,
@@ -171,6 +174,9 @@ class ApiService {
       requestBody.remove('_id');
       requestBody.remove('createdAt');
       requestBody.remove('updatedAt');
+
+      // Remove null values to allow backend defaults or preserve existing values
+      requestBody.removeWhere((key, value) => value == null);
 
       final response = await _client.patch(
         url,

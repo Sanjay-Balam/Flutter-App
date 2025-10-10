@@ -16,7 +16,7 @@ class SalesApiService {
   // Headers for API requests - using centralized config
   Map<String, String> get _headers => AppConfig.defaultHeaders;
 
-  /// Create a new sale record
+  /// Create a new sale record (with stock validation and update)
   Future<SaleRecord> createSale({
     required MenuItem menuItem,
     required String categoryName, // Category name must be provided
@@ -26,6 +26,16 @@ class SalesApiService {
     String? notes,
   }) async {
     try {
+      // Step 1: Validate stock if item is being tracked
+      if (menuItem.isTrackingStock) {
+        if (!menuItem.canSellQuantity(quantity)) {
+          throw Exception(
+            'Insufficient stock for ${menuItem.name}. Available: ${menuItem.currentStock}, Requested: $quantity',
+          );
+        }
+      }
+
+      // Step 2: Create the sale record
       final url = Uri.parse(AppConfig.createResourceEndpoint('SaleRecords'));
 
       final unitPrice = menuItem.getPriceBySize(size);
@@ -56,7 +66,20 @@ class SalesApiService {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
 
         if (responseData['success'] == true && responseData['data'] != null) {
-          return SaleRecord.fromJson(responseData['data']);
+          final sale = SaleRecord.fromJson(responseData['data']);
+
+          // Step 3: Update stock if tracking is enabled
+          if (menuItem.isTrackingStock) {
+            await _updateStockAfterSale(
+              menuItemId: menuItem.id,
+              quantity: quantity,
+              userId: userId,
+              saleId: sale.id,
+              itemName: menuItem.name,
+            );
+          }
+
+          return sale;
         } else {
           throw Exception(
             'API returned error: ${responseData['error'] ?? 'Unknown error'}',
@@ -67,6 +90,78 @@ class SalesApiService {
       }
     } catch (e) {
       throw Exception('Failed to create sale: $e');
+    }
+  }
+
+  /// Helper method to update stock after a successful sale
+  Future<void> _updateStockAfterSale({
+    required String menuItemId,
+    required int quantity,
+    required String userId,
+    required String saleId,
+    required String itemName,
+  }) async {
+    try {
+      // Step 1: Get current menu item
+      final getUrl = Uri.parse(
+        '${AppConfig.baseUrl}/${AppConfig.database}/getresource/MenuItems/$menuItemId',
+      );
+
+      final getResponse = await _client.get(getUrl, headers: _headers);
+      if (getResponse.statusCode != 200) {
+        print('Warning: Failed to fetch menu item for stock update');
+        return;
+      }
+
+      final menuItemData = jsonDecode(getResponse.body);
+      if (menuItemData['success'] != true) {
+        print('Warning: Failed to fetch menu item data');
+        return;
+      }
+
+      final previousQuantity = menuItemData['data']['stockQuantity'] ?? 0;
+      final newQuantity = previousQuantity - quantity;
+
+      // Step 2: Update MenuItem stock using PATCH
+      final patchUrl = Uri.parse(
+        '${AppConfig.baseUrl}/${AppConfig.database}/updateresource/MenuItems/$menuItemId',
+      );
+
+      final patchResponse = await _client.patch(
+        patchUrl,
+        headers: _headers,
+        body: jsonEncode({'stockQuantity': newQuantity}),
+      );
+
+      if (patchResponse.statusCode != 200) {
+        print('Warning: Failed to update stock quantity');
+        return;
+      }
+
+      // Step 3: Create StockHistory record
+      final historyUrl = Uri.parse(
+        '${AppConfig.baseUrl}/${AppConfig.database}/createresource/StockHistory',
+      );
+
+      final historyBody = {
+        'menuItemId': menuItemId,
+        'userId': userId,
+        'movementType': 'SALE',
+        'quantityChange': -quantity,
+        'previousQuantity': previousQuantity,
+        'newQuantity': newQuantity,
+        'reason': 'Sale of $quantity unit(s)',
+        'saleId': saleId,
+      };
+
+      await _client.post(
+        historyUrl,
+        headers: _headers,
+        body: jsonEncode(historyBody),
+      );
+    } catch (e) {
+      // Log but don't fail the sale
+      print('Warning: Failed to update stock history: $e');
     }
   }
 
