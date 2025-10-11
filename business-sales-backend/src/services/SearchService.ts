@@ -15,7 +15,7 @@ const modelMap: { [key: string]: mongoose.Model<any> } = {
 };
 
 // Custom Error Classes
-class NotFoundError extends Error {
+export class NotFoundError extends Error {
   status: number;
   constructor(message: string) {
     super(message);
@@ -24,7 +24,7 @@ class NotFoundError extends Error {
   }
 }
 
-class ValidationError extends Error {
+export class ValidationError extends Error {
   status: number;
   details: any;
   constructor(message: string, details?: any) {

@@ -53,6 +53,39 @@ const UserSchema = new Schema({
     type: Boolean,
     default: true
   },
+  // Business Details for Invoice Generation
+  businessDetails: {
+    address: {
+      street: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      zipCode: { type: String, trim: true },
+      country: { type: String, trim: true, default: 'India' }
+    },
+    contact: {
+      phone: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
+      website: { type: String, trim: true }
+    },
+    tax: {
+      gstNumber: { type: String, trim: true },
+      panNumber: { type: String, trim: true },
+      taxRegistered: { type: Boolean, default: false }
+    },
+    branding: {
+      logo: { type: String, trim: true }, // Logo URL or base64
+      tagline: { type: String, trim: true, maxlength: 100 },
+      primaryColor: { type: String, trim: true, default: '#8D4E23' }
+    }
+  },
+  // Invoice Settings
+  invoiceSettings: {
+    prefix: { type: String, trim: true, default: 'INV' },
+    nextNumber: { type: Number, default: 1 },
+    includeNotes: { type: Boolean, default: true },
+    includeTax: { type: Boolean, default: false },
+    taxRate: { type: Number, default: 0, min: 0, max: 100 }
+  }
 }, {
   timestamps: true,
   toJSON: {

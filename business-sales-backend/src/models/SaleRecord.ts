@@ -58,6 +58,19 @@ const SaleRecordSchema = new Schema({
     type: String,
     trim: true,
     maxlength: 500
+  },
+  // Invoice tracking fields
+  invoiceNumber: {
+    type: String,
+    trim: true,
+    index: true // For quick invoice lookups
+  },
+  invoiceGenerated: {
+    type: Boolean,
+    default: false
+  },
+  invoiceGeneratedAt: {
+    type: Date
   }
 },{
   timestamps: true

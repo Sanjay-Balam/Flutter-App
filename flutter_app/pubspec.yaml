@@ -56,6 +56,16 @@ dependencies:
   
   # Charts for analytics
   fl_chart: ^0.69.2
+  
+  # Invoice Generation & PDF
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  
+  # Sharing functionality
+  share_plus: ^10.0.2
+  
+  # Path provider for file handling
+  path_provider: ^2.1.4
 
 dev_dependencies:
   flutter_test:

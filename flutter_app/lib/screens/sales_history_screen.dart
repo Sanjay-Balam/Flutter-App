@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/sale_record.dart';
 import '../models/menu_item.dart';
 import '../providers/sales_provider.dart';
+import '../widgets/invoice_dialog.dart';
 
 class SalesHistoryScreen extends ConsumerWidget {
   const SalesHistoryScreen({super.key});
@@ -315,6 +316,20 @@ class SalesHistoryScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                TextButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => InvoiceDialog(saleRecord: sale),
+                    );
+                  },
+                  icon: const Icon(Icons.receipt_long, size: 16),
+                  label: const Text('Invoice'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () {
                     _showDeleteConfirmation(context, sale, ref);

@@ -3,6 +3,7 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import Database from './src/config/database';
 import { searchRoutes } from './src/routes/searchRoutes';
+import invoiceRoutes from './src/routes/invoice.routes';
 
 // Initialize database connection
 await Database.connect();
@@ -30,6 +31,10 @@ const app = new Elysia()
           description: 'Universal search and CRUD endpoints for all collections'
         },
         {
+          name: 'Invoices',
+          description: 'Invoice generation, management, and business settings endpoints'
+        },
+        {
           name: 'Business Analytics',
           description: 'Specialized business analytics and reporting endpoints'
         }
@@ -46,6 +51,7 @@ const app = new Elysia()
           endpoints: {
         documentation: '/swagger',
         search: '/api/v1/search',
+        invoices: '/api/{database}/generate-invoice/{saleId}',
         businessAnalytics: '/api/v1/search/{database}/business-analytics',
         menuItems: '/api/v1/search/{database}/MenuItems',
         salesRecords: '/api/v1/search/{database}/SaleRecords'
@@ -62,7 +68,9 @@ const app = new Elysia()
 
   // API routes with versioning
   .group('', (app) => 
-    app.use(searchRoutes)
+    app
+      .use(searchRoutes)
+      .use(invoiceRoutes)
   )
 
   // Global error handler

@@ -44,8 +44,8 @@ class AppConfig {
   // UI Configuration
   // ==========================================================================
 
-  /// Default currency symbol
-  static const String currencySymbol = '₹';
+  /// Default currency symbol (using Rs. for better PDF compatibility)
+  static const String currencySymbol = 'Rs.';
 
   /// Number of decimal places for currency display
   static const int currencyDecimalPlaces = 0;
