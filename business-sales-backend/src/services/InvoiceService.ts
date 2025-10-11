@@ -53,10 +53,10 @@ class InvoiceService {
   /**
    * Generate invoice number and update sale record
    */
-  async generateInvoiceForSale(saleId: string, userId: string): Promise<InvoiceData> {
+  async generateInvoiceForSale(database: string, saleId: string, userId: string): Promise<InvoiceData> {
     try {
       // 1. Get user details for invoice settings using SearchService
-      const userResult = await searchService.getResource('DemoDB', 'Users', { id: userId });
+      const userResult = await searchService.getResource(database, 'Users', { id: userId });
       
       if (!userResult || !userResult.success || !userResult.data) {
         throw new NotFoundError('User not found');
@@ -75,7 +75,7 @@ class InvoiceService {
         };
         
         // Update user with proper invoice settings
-        await searchService.updateResource('DemoDB', 'Users', { id: userId }, {
+        await searchService.updateResource(database, 'Users', { id: userId }, {
           invoiceSettings: defaultInvoiceSettings
         });
         
@@ -84,7 +84,7 @@ class InvoiceService {
       }
 
       // 3. Get sale record using SearchService
-      const saleResult = await searchService.getResource('DemoDB', 'SaleRecords', { id: saleId });
+      const saleResult = await searchService.getResource(database, 'SaleRecords', { id: saleId });
       if (!saleResult || !saleResult.success || !saleResult.data) {
         throw new NotFoundError('Sale record not found');
       }
@@ -114,7 +114,7 @@ class InvoiceService {
         invoiceGeneratedAt: new Date()
       };
       
-      await searchService.updateResource('DemoDB', 'SaleRecords', { id: saleId }, {
+      await searchService.updateResource(database, 'SaleRecords', { id: saleId }, {
         invoiceNumber,
         invoiceGenerated: true,
         invoiceGeneratedAt: new Date()
@@ -125,7 +125,7 @@ class InvoiceService {
         ...user.invoiceSettings,
         nextNumber: nextNumber + 1
       };
-      await searchService.updateResource('DemoDB', 'Users', { id: userId }, {
+      await searchService.updateResource(database, 'Users', { id: userId }, {
         invoiceSettings: newInvoiceSettings
       });
 
@@ -146,9 +146,9 @@ class InvoiceService {
   /**
    * Get invoice data by sale ID
    */
-  async getInvoiceData(saleId: string): Promise<InvoiceData | null> {
+  async getInvoiceData(database: string, saleId: string): Promise<InvoiceData | null> {
     try {
-      const saleResult = await searchService.getResource('DemoDB', 'SaleRecords', { id: saleId });
+      const saleResult = await searchService.getResource(database, 'SaleRecords', { id: saleId });
       if (!saleResult || !saleResult.success || !saleResult.data) {
         return null;
       }
@@ -159,7 +159,7 @@ class InvoiceService {
         return null;
       }
 
-      const userResult = await searchService.getResource('DemoDB', 'Users', { id: saleRecord.userId });
+      const userResult = await searchService.getResource(database, 'Users', { id: saleRecord.userId });
       if (!userResult || !userResult.success || !userResult.data) {
         throw new NotFoundError('User not found');
       }
@@ -183,11 +183,11 @@ class InvoiceService {
   /**
    * Get all invoices for a user with pagination
    */
-  async getUserInvoices(userId: string, page: number = 1, pageSize: number = 20) {
+  async getUserInvoices(database: string, userId: string, page: number = 1, pageSize: number = 20) {
     try {
       // Note: This is a simplified implementation
       // In a real application, you might want to implement proper pagination in SearchService
-      const result = await searchService.searchResource('DemoDB', 'SaleRecords', {
+      const result = await searchService.searchResource(database, 'SaleRecords', {
         query: {
           userId: userId,
           invoiceGenerated: true
@@ -232,9 +232,9 @@ class InvoiceService {
   /**
    * Update business details for invoices
    */
-  async updateBusinessDetails(userId: string, businessDetails: any) {
+  async updateBusinessDetails(database: string, userId: string, businessDetails: any) {
     try {
-      const result = await searchService.updateResource('DemoDB', 'Users', { id: userId }, {
+      const result = await searchService.updateResource(database, 'Users', { id: userId }, {
         businessDetails
       });
 
@@ -259,9 +259,9 @@ class InvoiceService {
   /**
    * Update invoice settings
    */
-  async updateInvoiceSettings(userId: string, invoiceSettings: any) {
+  async updateInvoiceSettings(database: string, userId: string, invoiceSettings: any) {
     try {
-      const result = await searchService.updateResource('DemoDB', 'Users', { id: userId }, {
+      const result = await searchService.updateResource(database, 'Users', { id: userId }, {
         invoiceSettings
       });
 

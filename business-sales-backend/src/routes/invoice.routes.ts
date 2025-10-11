@@ -24,7 +24,7 @@ const invoiceRoutes = new Elysia({ prefix: '' })
     const { userId } = body;
     
     try {
-      const invoiceData = await invoiceService.generateInvoiceForSale(saleId, userId);
+      const invoiceData = await invoiceService.generateInvoiceForSale(database, saleId, userId);
       return {
         success: true,
         data: invoiceData
@@ -50,7 +50,7 @@ const invoiceRoutes = new Elysia({ prefix: '' })
     const { database, saleId } = params;
     
     try {
-      const invoiceData = await invoiceService.getInvoiceData(saleId);
+      const invoiceData = await invoiceService.getInvoiceData(database, saleId);
       if (!invoiceData) {
         return {
           success: false,
@@ -81,7 +81,7 @@ const invoiceRoutes = new Elysia({ prefix: '' })
     const page = query.page ? parseInt(query.page as string) : 1;
     const pageSize = query.pageSize ? parseInt(query.pageSize as string) : 20;
     
-    return await invoiceService.getUserInvoices(userId, page, pageSize);
+    return await invoiceService.getUserInvoices(database, userId, page, pageSize);
   }, {
     params: t.Object({
       database: t.String(),
@@ -100,7 +100,7 @@ const invoiceRoutes = new Elysia({ prefix: '' })
   // PATCH /:database/business-details/:userId - Update business details
   .patch('/:database/business-details/:userId', async ({ params, body }) => {
     const { database, userId } = params;
-    return await invoiceService.updateBusinessDetails(userId, body);
+    return await invoiceService.updateBusinessDetails(database, userId, body);
   }, {
     params: t.Object({
       database: t.String(),
@@ -112,7 +112,7 @@ const invoiceRoutes = new Elysia({ prefix: '' })
   // PATCH /:database/invoice-settings/:userId - Update invoice settings
   .patch('/:database/invoice-settings/:userId', async ({ params, body }) => {
     const { database, userId } = params;
-    return await invoiceService.updateInvoiceSettings(userId, body);
+    return await invoiceService.updateInvoiceSettings(database, userId, body);
   }, {
     params: t.Object({
       database: t.String(),
