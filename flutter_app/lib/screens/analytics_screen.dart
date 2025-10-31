@@ -585,8 +585,19 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     // Group sales by category name
     final Map<String, double> categoryRevenue = {};
     for (final sale in monthSales) {
-      categoryRevenue[sale.categoryName] =
-          (categoryRevenue[sale.categoryName] ?? 0) + sale.totalAmount;
+      if (sale.isMultiItem && sale.items != null) {
+        // For multi-item sales, distribute revenue by item
+        for (final item in sale.items!) {
+          final categoryName = item.categoryName;
+          categoryRevenue[categoryName] =
+              (categoryRevenue[categoryName] ?? 0) + item.subtotal;
+        }
+      } else {
+        // For single-item sales
+        final categoryName = sale.categoryName ?? 'Uncategorized';
+        categoryRevenue[categoryName] =
+            (categoryRevenue[categoryName] ?? 0) + sale.totalAmount;
+      }
     }
 
     final sections = categoryRevenue.entries.map((entry) {
@@ -648,7 +659,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     Color color,
   ) {
     final totalRevenue = sales.fold(0.0, (sum, sale) => sum + sale.totalAmount);
-    final totalItems = sales.fold(0, (sum, sale) => sum + sale.quantity);
+    final totalItems = sales.fold<int>(0, (sum, sale) {
+      if (sale.isMultiItem && sale.items != null) {
+        return sum +
+            sale.items!.fold<int>(
+              0,
+              (itemSum, item) => itemSum + item.quantity,
+            );
+      } else {
+        return sum + (sale.quantity ?? 0);
+      }
+    });
     final avgSale = sales.isNotEmpty ? totalRevenue / sales.length : 0.0;
 
     return Card(

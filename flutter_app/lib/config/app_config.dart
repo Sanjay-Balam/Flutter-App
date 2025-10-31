@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 /// Centralized configuration for the Flutter app
 /// This file contains all app-wide constants and settings
 class AppConfig {
@@ -11,7 +13,24 @@ class AppConfig {
   /// Base URL for the backend API
   /// Switch between local and deployed backend
   // static const String baseUrl = 'https://flutter-app-1o90.onrender.com';
-  static const String baseUrl = 'http://localhost:3000';
+
+  /// Get base URL based on platform
+  /// - Android emulator: use 10.0.2.2 (emulator's host machine)
+  /// - iOS simulator: use localhost
+  /// - Web/Desktop: use localhost
+  static String get baseUrl {
+    try {
+      if (Platform.isAndroid) {
+        // Android emulator uses 10.0.2.2 to access host machine
+        return 'http://10.0.2.2:3000';
+      }
+      // iOS simulator, web, and desktop can use localhost
+      return 'http://localhost:3000';
+    } catch (e) {
+      // Fallback for web (Platform is not available)
+      return 'http://localhost:3000';
+    }
+  }
 
   /// Database name used in API endpoints
   static const String database = 'DemoDB';

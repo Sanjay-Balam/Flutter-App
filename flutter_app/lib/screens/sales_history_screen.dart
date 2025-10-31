@@ -90,9 +90,7 @@ class SalesHistoryScreen extends ConsumerWidget {
                       itemCount: allSales.length,
                       itemBuilder: (context, index) {
                         final sale =
-                            allSales[allSales.length -
-                                1 -
-                                index]; // Reverse order
+                            allSales[index]; // Already sorted newest first
                         return _buildSaleCard(
                           context,
                           sale,
@@ -196,6 +194,15 @@ class SalesHistoryScreen extends ConsumerWidget {
     final dateFormatter = DateFormat('MMM dd, yyyy');
     final timeFormatter = DateFormat('hh:mm a');
 
+    // Determine if this is a multi-item or single-item sale
+    final isMultiItem = sale.isMultiItem;
+    final displayName = isMultiItem
+        ? '${sale.items!.length} Items'
+        : sale.itemName ?? 'Unknown Item';
+    final displayQuantity = isMultiItem
+        ? sale.items!.fold<int>(0, (sum, item) => sum + item.quantity)
+        : sale.quantity ?? 0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -211,16 +218,46 @@ class SalesHistoryScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        sale.itemName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (isMultiItem) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.blue.withOpacity(0.3),
+                                ),
+                              ),
+                              child: const Text(
+                                'Multi',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${sale.quantity}x ${sale.size.displayName}',
+                        isMultiItem
+                            ? '$displayQuantity items total'
+                            : '${sale.quantity ?? 0}x ${sale.size?.displayName ?? 'Unknown'}',
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
@@ -230,17 +267,18 @@ class SalesHistoryScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      currencyFormatter.format(sale.totalAmount),
+                      currencyFormatter.format(sale.grandTotal),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
                       ),
                     ),
-                    Text(
-                      '${currencyFormatter.format(sale.unitPrice)} each',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                    ),
+                    if (!isMultiItem && sale.unitPrice != null)
+                      Text(
+                        '${currencyFormatter.format(sale.unitPrice)} each',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
                   ],
                 ),
               ],
@@ -252,7 +290,7 @@ class SalesHistoryScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Category
+                // Category or Item Count
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -266,7 +304,9 @@ class SalesHistoryScreen extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        sale.categoryName,
+                        isMultiItem
+                            ? 'Multiple Categories'
+                            : sale.categoryName ?? 'Uncategorized',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -289,6 +329,62 @@ class SalesHistoryScreen extends ConsumerWidget {
                 ),
               ],
             ),
+
+            // Multi-item details (expandable list)
+            if (isMultiItem) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Items in this sale:',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...sale.items!
+                        .map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${item.quantity}x ${item.itemName} (${item.size.displayName})',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  currencyFormatter.format(item.subtotal),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[800],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ],
+                ),
+              ),
+            ],
 
             // Notes (if any)
             if (sale.notes?.isNotEmpty == true) ...[
@@ -351,12 +447,16 @@ class SalesHistoryScreen extends ConsumerWidget {
     SaleRecord sale,
     WidgetRef ref,
   ) {
+    final itemDescription = sale.isMultiItem
+        ? '${sale.items!.length} items (${NumberFormat.currency(symbol: '₹', decimalDigits: 0).format(sale.grandTotal)})'
+        : sale.itemName ?? 'this item';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Sale'),
         content: Text(
-          'Are you sure you want to delete this sale of ${sale.itemName}?',
+          'Are you sure you want to delete this sale of $itemDescription?',
         ),
         actions: [
           TextButton(

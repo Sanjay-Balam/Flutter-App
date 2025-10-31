@@ -5,11 +5,13 @@ import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/sales_provider.dart';
+import '../providers/cart_provider.dart';
 import '../widgets/menu_item_card.dart';
 import '../widgets/sell_dialog.dart';
 import '../widgets/menu_item_form_dialog.dart';
 import '../widgets/category_form_dialog.dart';
 import '../widgets/delete_category_dialog.dart';
+import '../widgets/cart_button.dart';
 
 class MenuScreen extends ConsumerStatefulWidget {
   const MenuScreen({super.key});
@@ -56,6 +58,8 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
             title: const Text('Menu'),
             centerTitle: true,
             actions: [
+              // Cart button
+              const CartButton(),
               // Refresh button
               IconButton(
                 icon: const Icon(Icons.refresh),
@@ -536,26 +540,108 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
   }
 
   void _showSellDialog(MenuItem menuItem) {
+    // Get category name
+    final categoriesAsync = ref.read(categoriesProvider);
+    final categoryName = categoriesAsync.when(
+      data: (categories) {
+        final category = categories.firstWhere(
+          (cat) => cat.id == menuItem.categoryId,
+          orElse: () => categories.first,
+        );
+        return category.name;
+      },
+      loading: () => 'Unknown',
+      error: (_, __) => 'Unknown',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        menuItem.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        categoryName,
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const Divider(height: 32),
+
+            // Option 1: Sell Immediately
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.point_of_sale, color: Colors.green[700]),
+              ),
+              title: const Text('Sell Immediately'),
+              subtitle: const Text('Record sale and generate invoice now'),
+              onTap: () {
+                Navigator.pop(context);
+                _showImmediateSellDialog(menuItem, categoryName);
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Option 2: Add to Cart
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.add_shopping_cart, color: Colors.blue[700]),
+              ),
+              title: const Text('Add to Cart'),
+              subtitle: const Text('Add to cart and continue shopping'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAddToCartDialog(menuItem, categoryName);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImmediateSellDialog(MenuItem menuItem, String categoryName) {
     showDialog(
       context: context,
       builder: (context) => SellDialog(
         menuItem: menuItem,
         onSell: (size, quantity, notes) async {
           try {
-            // Find the category name from categories provider
-            final categoriesAsync = ref.read(categoriesProvider);
-            final categoryName = categoriesAsync.when(
-              data: (categories) {
-                final category = categories.firstWhere(
-                  (cat) => cat.id == menuItem.categoryId,
-                  orElse: () => categories.first,
-                );
-                return category.name;
-              },
-              loading: () => 'Unknown',
-              error: (_, __) => 'Unknown',
-            );
-
             await ref
                 .read(salesProvider.notifier)
                 .addSale(
@@ -589,6 +675,46 @@ class _MenuScreenState extends ConsumerState<MenuScreen> {
                 ),
               );
             }
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAddToCartDialog(MenuItem menuItem, String categoryName) {
+    showDialog(
+      context: context,
+      builder: (context) => SellDialog(
+        menuItem: menuItem,
+        onSell: (size, quantity, notes) async {
+          // Add to cart instead of selling immediately
+          ref
+              .read(cartProvider.notifier)
+              .addItem(
+                menuItem: menuItem,
+                categoryName: categoryName,
+                size: size,
+                quantity: quantity,
+              );
+
+          // Show success snackbar
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '🛒 Added ${quantity}x ${menuItem.name} (${size.displayName}) to cart',
+                ),
+                backgroundColor: Colors.blue,
+                duration: const Duration(seconds: 2),
+                action: SnackBarAction(
+                  label: 'VIEW CART',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/cart');
+                  },
+                ),
+              ),
+            );
           }
         },
       ),

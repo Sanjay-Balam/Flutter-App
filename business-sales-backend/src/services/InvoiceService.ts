@@ -2,20 +2,45 @@ import { NotFoundError } from './SearchService';
 import searchService from './SearchService';
 
 // Type definitions for proper typing
+interface SaleItem {
+  menuItemId: string;
+  itemName: string;
+  categoryId: string;
+  categoryName: string;
+  size: string;
+  unitPrice: number;
+  quantity: number;
+  subtotal: number;
+}
+
 interface SaleRecord {
   _id: string;
   userId: string;
+  // Single-item fields
+  menuItemId?: string;
   menuItem?: string;
   itemName?: string;
-  size: string;
-  quantity: number;
+  categoryId?: string;
+  categoryName?: string;
+  size?: string;
+  unitPrice?: number;
+  quantity?: number;
+  // Multi-item fields
+  items?: SaleItem[];
+  saleType: 'single' | 'multi';
+  // Shared fields
   totalAmount: number;
+  taxAmount?: number;
+  grandTotal: number;
   timestamp: Date;
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
   invoiceGenerated?: boolean;
   invoiceNumber?: string;
   invoiceGeneratedAt?: Date;
+  paymentMethod?: string;
+  paymentStatus?: string;
   [key: string]: any;
 }
 

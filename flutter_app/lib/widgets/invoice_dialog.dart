@@ -183,12 +183,37 @@ class _InvoiceDialogState extends ConsumerState<InvoiceDialog> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildDetailRow('Item:', widget.saleRecord.itemName),
-                    _buildDetailRow('Size:', widget.saleRecord.size.name),
-                    _buildDetailRow(
-                      'Quantity:',
-                      widget.saleRecord.quantity.toString(),
-                    ),
+                    // Show different details based on sale type
+                    if (widget.saleRecord.isMultiItem) ...[
+                      _buildDetailRow(
+                        'Item:',
+                        widget.saleRecord.items!.length == 1
+                            ? widget.saleRecord.items!.first.itemName
+                            : widget.saleRecord.items!
+                                  .map((item) => item.itemName)
+                                  .join(', '),
+                      ),
+                      _buildDetailRow('Size:', 'Multiple'),
+                      _buildDetailRow(
+                        'Quantity:',
+                        widget.saleRecord.items!
+                            .fold<int>(0, (sum, item) => sum + item.quantity)
+                            .toString(),
+                      ),
+                    ] else ...[
+                      _buildDetailRow(
+                        'Item:',
+                        widget.saleRecord.itemName ?? 'Unknown',
+                      ),
+                      _buildDetailRow(
+                        'Size:',
+                        widget.saleRecord.size?.name ?? 'Unknown',
+                      ),
+                      _buildDetailRow(
+                        'Quantity:',
+                        (widget.saleRecord.quantity ?? 0).toString(),
+                      ),
+                    ],
                     _buildDetailRow(
                       'Amount:',
                       '${AppConfig.currencySymbol}${widget.saleRecord.totalAmount.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',

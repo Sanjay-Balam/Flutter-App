@@ -340,6 +340,60 @@ class InvoiceApiService {
   }
 
   pw.Widget _buildItemsTable(Invoice invoice) {
+    // Build table rows based on sale type
+    final List<pw.TableRow> rows = [
+      // Header
+      pw.TableRow(
+        decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+        children: [
+          _buildTableCell('Item', isHeader: true),
+          _buildTableCell('Size', isHeader: true),
+          _buildTableCell('Qty', isHeader: true),
+          _buildTableCell('Rate', isHeader: true),
+          _buildTableCell('Amount', isHeader: true),
+        ],
+      ),
+    ];
+
+    // Add item rows
+    if (invoice.saleRecord.isMultiItem && invoice.saleRecord.items != null) {
+      // Multi-item sale: add a row for each item
+      for (final item in invoice.saleRecord.items!) {
+        rows.add(
+          pw.TableRow(
+            children: [
+              _buildTableCell(item.itemName),
+              _buildTableCell(item.size.name),
+              _buildTableCell(item.quantity.toString()),
+              _buildTableCell(
+                '${AppConfig.currencySymbol}${item.unitPrice.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
+              ),
+              _buildTableCell(
+                '${AppConfig.currencySymbol}${item.subtotal.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      // Single-item sale
+      rows.add(
+        pw.TableRow(
+          children: [
+            _buildTableCell(invoice.saleRecord.itemName ?? 'Unknown'),
+            _buildTableCell(invoice.saleRecord.size?.name ?? 'Unknown'),
+            _buildTableCell((invoice.saleRecord.quantity ?? 0).toString()),
+            _buildTableCell(
+              '${AppConfig.currencySymbol}${(invoice.saleRecord.unitPrice ?? 0).toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
+            ),
+            _buildTableCell(
+              '${AppConfig.currencySymbol}${invoice.saleRecord.totalAmount.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
+            ),
+          ],
+        ),
+      );
+    }
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300),
       columnWidths: {
@@ -349,33 +403,7 @@ class InvoiceApiService {
         3: const pw.FlexColumnWidth(1),
         4: const pw.FlexColumnWidth(1.5),
       },
-      children: [
-        // Header
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey100),
-          children: [
-            _buildTableCell('Item', isHeader: true),
-            _buildTableCell('Size', isHeader: true),
-            _buildTableCell('Qty', isHeader: true),
-            _buildTableCell('Rate', isHeader: true),
-            _buildTableCell('Amount', isHeader: true),
-          ],
-        ),
-        // Item row
-        pw.TableRow(
-          children: [
-            _buildTableCell(invoice.saleRecord.itemName),
-            _buildTableCell(invoice.saleRecord.size.name),
-            _buildTableCell(invoice.saleRecord.quantity.toString()),
-            _buildTableCell(
-              '${AppConfig.currencySymbol}${invoice.saleRecord.unitPrice.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
-            ),
-            _buildTableCell(
-              '${AppConfig.currencySymbol}${invoice.saleRecord.totalAmount.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
-            ),
-          ],
-        ),
-      ],
+      children: rows,
     );
   }
 

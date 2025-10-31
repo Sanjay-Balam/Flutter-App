@@ -4,6 +4,7 @@ import { swagger } from '@elysiajs/swagger';
 import Database from './src/config/database';
 import { searchRoutes } from './src/routes/searchRoutes';
 import invoiceRoutes from './src/routes/invoice.routes';
+import transactionRoutes from './src/routes/transaction.routes';
 
 // Initialize database connection
 await Database.connect();
@@ -33,6 +34,10 @@ const app = new Elysia()
         {
           name: 'Invoices',
           description: 'Invoice generation, management, and business settings endpoints'
+        },
+        {
+          name: 'Transactions',
+          description: 'Multi-item transaction and invoice management endpoints'
         },
         {
           name: 'Business Analytics',
@@ -71,6 +76,7 @@ const app = new Elysia()
     app
       .use(searchRoutes)
       .use(invoiceRoutes)
+      .use(transactionRoutes)
   )
 
   // Global error handler

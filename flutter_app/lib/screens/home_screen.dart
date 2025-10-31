@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'billing_screen.dart';
 import 'menu_screen.dart';
 import 'sales_history_screen.dart';
 import 'analytics_screen.dart';
@@ -15,6 +16,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
+    const BillingScreen(),
     const MenuScreen(),
     const SalesHistoryScreen(),
     const AnalyticsScreen(),
@@ -35,6 +37,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
         items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.point_of_sale),
+            label: 'Billing',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_menu),
             label: 'Menu',

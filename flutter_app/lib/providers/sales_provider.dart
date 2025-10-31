@@ -194,8 +194,9 @@ final topSellingItemsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
     data: (sales) {
       final Map<String, int> itemCounts = {};
       for (final sale in sales) {
-        itemCounts[sale.itemName] =
-            (itemCounts[sale.itemName] ?? 0) + sale.quantity;
+        final itemName = sale.itemName ?? 'Unknown';
+        final quantity = sale.quantity ?? 0;
+        itemCounts[itemName] = (itemCounts[itemName] ?? 0) + quantity;
       }
       return AsyncValue.data(itemCounts);
     },
