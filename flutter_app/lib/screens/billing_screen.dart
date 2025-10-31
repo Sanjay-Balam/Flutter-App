@@ -9,6 +9,7 @@ import '../providers/user_provider.dart';
 import '../providers/sales_provider.dart';
 import '../services/transaction_api_service.dart';
 import '../widgets/transaction_invoice_dialog.dart';
+import '../config/app_config.dart';
 
 // Billing item class - represents items selected for billing
 class BillingItem {
@@ -498,33 +499,63 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: billingItems.isEmpty || _isProcessing
-                            ? null
-                            : _generateBill,
-                        icon: _isProcessing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : const Icon(Icons.receipt_long),
-                        label: Text(
-                          _isProcessing ? 'Processing...' : 'Generate Bill',
-                          style: const TextStyle(fontSize: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: billingItems.isEmpty || _isProcessing
+                                ? null
+                                : _quickSell,
+                            icon: _isProcessing
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.flash_on),
+                            label: const Text(
+                              'Quick Sell',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(
+                                color: Theme.of(context).primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                          ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          textStyle: const TextStyle(fontSize: 18),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: billingItems.isEmpty || _isProcessing
+                                ? null
+                                : _generateBill,
+                            icon: _isProcessing
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.receipt_long),
+                            label: const Text(
+                              'Generate Bill',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -801,35 +832,69 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: billingItems.isEmpty || _isProcessing
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                _generateBill();
-                              },
-                        icon: _isProcessing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : const Icon(Icons.receipt_long),
-                        label: Text(
-                          _isProcessing ? 'Processing...' : 'Generate Bill',
-                          style: const TextStyle(fontSize: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: billingItems.isEmpty || _isProcessing
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                    _quickSell();
+                                  },
+                            icon: _isProcessing
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.flash_on),
+                            label: const Text(
+                              'Quick Sell',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              side: BorderSide(
+                                color: Theme.of(context).primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                          ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: billingItems.isEmpty || _isProcessing
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                    _generateBill();
+                                  },
+                            icon: _isProcessing
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Icon(Icons.receipt_long),
+                            label: const Text(
+                              'Generate Bill',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
@@ -1310,6 +1375,76 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Failed to generate bill: ${error.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _quickSell() async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+
+    try {
+      final userId = ref.read(currentUserIdProvider);
+
+      if (userId == null) {
+        throw Exception('User ID not found');
+      }
+
+      final billingItems = ref.read(billingProvider);
+      final transactionItems = billingItems
+          .map((item) => item.toTransactionItem())
+          .toList();
+      final notes = _notesController.text.trim();
+
+      // Calculate total
+      final totalAmount = billingItems.fold<double>(
+        0,
+        (sum, item) => sum + (item.unitPrice * item.quantity),
+      );
+
+      // Create transaction without invoice
+      final transactionService = TransactionApiService();
+      await transactionService.createTransaction(
+        userId: userId,
+        items: transactionItems,
+        notes: notes.isEmpty ? null : notes,
+        paymentMethod: 'cash',
+        paymentStatus: 'paid',
+      );
+
+      // Clear billing
+      ref.read(billingProvider.notifier).clearBilling();
+      _notesController.clear();
+
+      // Refresh sales provider to show new sale in Sales page
+      ref.invalidate(salesProvider);
+
+      setState(() => _isProcessing = false);
+
+      if (mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '✅ Sale Completed! Total: ${AppConfig.currencySymbol}${totalAmount.toStringAsFixed(AppConfig.currencyDecimalPlaces)}',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (error) {
+      setState(() => _isProcessing = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Failed to complete sale: ${error.toString()}'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),

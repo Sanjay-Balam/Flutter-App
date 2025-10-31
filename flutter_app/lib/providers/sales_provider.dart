@@ -194,9 +194,18 @@ final topSellingItemsProvider = Provider<AsyncValue<Map<String, int>>>((ref) {
     data: (sales) {
       final Map<String, int> itemCounts = {};
       for (final sale in sales) {
-        final itemName = sale.itemName ?? 'Unknown';
-        final quantity = sale.quantity ?? 0;
-        itemCounts[itemName] = (itemCounts[itemName] ?? 0) + quantity;
+        if (sale.isMultiItem && sale.items != null) {
+          // For multi-item sales, count each item separately
+          for (final item in sale.items!) {
+            final itemName = item.itemName;
+            itemCounts[itemName] = (itemCounts[itemName] ?? 0) + item.quantity;
+          }
+        } else {
+          // For single-item sales
+          final itemName = sale.itemName ?? 'Unknown';
+          final quantity = sale.quantity ?? 0;
+          itemCounts[itemName] = (itemCounts[itemName] ?? 0) + quantity;
+        }
       }
       return AsyncValue.data(itemCounts);
     },
