@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/sale_record.dart';
 import '../models/menu_item.dart';
 import '../providers/sales_provider.dart';
+import '../widgets/date_range_picker_dialog.dart';
+import '../services/pdf_export_service.dart';
 
 class AnalyticsScreen extends ConsumerStatefulWidget {
   const AnalyticsScreen({super.key});
@@ -17,6 +19,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _selectedTimePeriod = 'All Time'; // Default to All Time
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
 
   @override
   void initState() {
@@ -64,6 +68,17 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
         title: const Text('Analytics'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Report',
+            onPressed: () => _showExportDialog(
+              allSalesAsync.value ?? [],
+              todaysSalesAsync.value ?? [],
+              thisWeekSalesAsync.value ?? [],
+              thisMonthSalesAsync.value ?? [],
+              thisYearSalesAsync.value ?? [],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
@@ -167,6 +182,20 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
       case 'This Year':
         selectedSales = thisYearSales;
         break;
+      case 'Custom':
+        if (_customStartDate != null && _customEndDate != null) {
+          selectedSales = allSales.where((sale) {
+            return sale.timestamp.isAfter(
+                  _customStartDate!.subtract(const Duration(seconds: 1)),
+                ) &&
+                sale.timestamp.isBefore(
+                  _customEndDate!.add(const Duration(seconds: 1)),
+                );
+          }).toList();
+        } else {
+          selectedSales = allSales;
+        }
+        break;
       case 'All Time':
       default:
         selectedSales = allSales;
@@ -178,7 +207,8 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
       if (sale.isMultiItem && sale.items != null) {
         for (final item in sale.items!) {
           final itemName = item.itemName;
-          topSellingItems[itemName] = (topSellingItems[itemName] ?? 0) + item.quantity;
+          topSellingItems[itemName] =
+              (topSellingItems[itemName] ?? 0) + item.quantity;
         }
       } else {
         final itemName = sale.itemName ?? 'Unknown';
@@ -312,7 +342,10 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -333,17 +366,67 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
                     fontWeight: FontWeight.w600,
                     color: Theme.of(context).primaryColor,
                   ),
+                  selectedItemBuilder: (context) {
+                    return [
+                      const Text('Today'),
+                      const Text('Week'),
+                      const Text('Month'),
+                      const Text('Year'),
+                      const Text('All'),
+                      Text(
+                        _customStartDate != null && _customEndDate != null
+                            ? '${DateFormat('MMM d').format(_customStartDate!)} - ${DateFormat('MMM d').format(_customEndDate!)}'
+                            : 'Custom',
+                        style: const TextStyle(fontSize: 11),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ];
+                  },
                   items: const [
                     DropdownMenuItem(value: 'Today', child: Text('Today')),
-                    DropdownMenuItem(value: 'This Week', child: Text('This Week')),
-                    DropdownMenuItem(value: 'This Month', child: Text('This Month')),
-                    DropdownMenuItem(value: 'This Year', child: Text('This Year')),
-                    DropdownMenuItem(value: 'All Time', child: Text('All Time')),
+                    DropdownMenuItem(
+                      value: 'This Week',
+                      child: Text('This Week'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'This Month',
+                      child: Text('This Month'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'This Year',
+                      child: Text('This Year'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'All Time',
+                      child: Text('All Time'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Custom',
+                      child: Text('Custom Range...'),
+                    ),
                   ],
-                  onChanged: (value) {
-                    if (value != null) {
+                  onChanged: (value) async {
+                    if (value == 'Custom') {
+                      final result = await showDialog<Map<String, DateTime>>(
+                        context: context,
+                        builder: (context) => CustomDateRangeDialog(
+                          initialStartDate: _customStartDate,
+                          initialEndDate: _customEndDate,
+                        ),
+                      );
+
+                      if (result != null) {
+                        setState(() {
+                          _selectedTimePeriod = 'Custom';
+                          _customStartDate = result['startDate'];
+                          _customEndDate = result['endDate'];
+                        });
+                      }
+                    } else if (value != null) {
                       setState(() {
                         _selectedTimePeriod = value;
+                        _customStartDate = null;
+                        _customEndDate = null;
                       });
                     }
                   },
@@ -809,6 +892,131 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
+    );
+  }
+
+  void _showExportDialog(
+    List<SaleRecord> allSales,
+    List<SaleRecord> todaysSales,
+    List<SaleRecord> thisWeekSales,
+    List<SaleRecord> thisMonthSales,
+    List<SaleRecord> thisYearSales,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Report'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Select the time period for your report:'),
+            const SizedBox(height: 16),
+            _buildExportOption(
+              'Today\'s Report',
+              todaysSales,
+              'Today - ${DateFormat('MMM dd, yyyy').format(DateTime.now())}',
+            ),
+            _buildExportOption(
+              'This Week\'s Report',
+              thisWeekSales,
+              'This Week',
+            ),
+            _buildExportOption(
+              'This Month\'s Report',
+              thisMonthSales,
+              'This Month - ${DateFormat('MMMM yyyy').format(DateTime.now())}',
+            ),
+            _buildExportOption(
+              'This Year\'s Report',
+              thisYearSales,
+              'This Year - ${DateTime.now().year}',
+            ),
+            _buildExportOption('All Time Report', allSales, 'All Time'),
+            if (_selectedTimePeriod == 'Custom' &&
+                _customStartDate != null &&
+                _customEndDate != null)
+              _buildExportOption(
+                'Custom Range Report',
+                allSales.where((sale) {
+                  return sale.timestamp.isAfter(
+                        _customStartDate!.subtract(const Duration(seconds: 1)),
+                      ) &&
+                      sale.timestamp.isBefore(
+                        _customEndDate!.add(const Duration(seconds: 1)),
+                      );
+                }).toList(),
+                '${DateFormat('MMM dd, yyyy').format(_customStartDate!)} - ${DateFormat('MMM dd, yyyy').format(_customEndDate!)}',
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExportOption(
+    String title,
+    List<SaleRecord> sales,
+    String dateRange,
+  ) {
+    return ListTile(
+      leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
+      title: Text(title),
+      subtitle: Text('${sales.length} sales'),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () async {
+        // Close the dialog first
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        // Wait a frame before showing snackbar to avoid navigator assertion
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        if (!mounted) return;
+
+        if (sales.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No sales data available for this period'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+
+        try {
+          await PdfExportService.exportSalesReport(
+            sales: sales,
+            reportTitle: title,
+            dateRange: dateRange,
+            businessName: 'Your Business', // TODO: Get from settings
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Report exported successfully!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error exporting report: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      },
     );
   }
 }
