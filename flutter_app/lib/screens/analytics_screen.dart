@@ -16,6 +16,7 @@ class AnalyticsScreen extends ConsumerStatefulWidget {
 class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String _selectedTimePeriod = 'All Time'; // Default to All Time
 
   @override
   void initState() {
@@ -32,10 +33,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
   @override
   Widget build(BuildContext context) {
     final todaysRevenue = ref.watch(todaysRevenueProvider);
+    final todaysSalesAsync = ref.watch(todaysSalesProvider);
     final thisWeekSalesAsync = ref.watch(thisWeekSalesProvider);
     final thisMonthSalesAsync = ref.watch(thisMonthSalesProvider);
     final thisYearSalesAsync = ref.watch(thisYearSalesProvider);
-    final topSellingItemsAsync = ref.watch(topSellingItemsProvider);
+    final allSalesAsync = ref.watch(salesProvider);
     final currencyFormatter = NumberFormat.currency(
       symbol: '₹',
       decimalDigits: 0,
@@ -43,17 +45,19 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
 
     // Check if any data is loading
     final isLoading =
+        todaysSalesAsync.isLoading ||
         thisWeekSalesAsync.isLoading ||
         thisMonthSalesAsync.isLoading ||
         thisYearSalesAsync.isLoading ||
-        topSellingItemsAsync.isLoading;
+        allSalesAsync.isLoading;
 
     // Check if any data has error
     final hasError =
+        todaysSalesAsync.hasError ||
         thisWeekSalesAsync.hasError ||
         thisMonthSalesAsync.hasError ||
         thisYearSalesAsync.hasError ||
-        topSellingItemsAsync.hasError;
+        allSalesAsync.hasError;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,10 +93,11 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
                 _buildOverviewTab(
                   currencyFormatter,
                   todaysRevenue,
+                  todaysSalesAsync.value ?? [],
                   thisWeekSalesAsync.value ?? [],
                   thisMonthSalesAsync.value ?? [],
                   thisYearSalesAsync.value ?? [],
-                  topSellingItemsAsync.value ?? {},
+                  allSalesAsync.value ?? [],
                 ),
                 _buildChartsTab(
                   thisWeekSalesAsync.value ?? [],
@@ -141,11 +146,50 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
   Widget _buildOverviewTab(
     NumberFormat currencyFormatter,
     double todaysRevenue,
+    List<SaleRecord> todaysSales,
     List<SaleRecord> thisWeekSales,
     List<SaleRecord> thisMonthSales,
     List<SaleRecord> thisYearSales,
-    Map<String, int> topSellingItems,
+    List<SaleRecord> allSales,
   ) {
+    // Calculate top selling items based on selected time period
+    List<SaleRecord> selectedSales;
+    switch (_selectedTimePeriod) {
+      case 'Today':
+        selectedSales = todaysSales;
+        break;
+      case 'This Week':
+        selectedSales = thisWeekSales;
+        break;
+      case 'This Month':
+        selectedSales = thisMonthSales;
+        break;
+      case 'This Year':
+        selectedSales = thisYearSales;
+        break;
+      case 'All Time':
+      default:
+        selectedSales = allSales;
+    }
+
+    // Calculate top selling items for selected period
+    final Map<String, int> topSellingItems = {};
+    for (final sale in selectedSales) {
+      if (sale.isMultiItem && sale.items != null) {
+        for (final item in sale.items!) {
+          final itemName = item.itemName;
+          topSellingItems[itemName] = (topSellingItems[itemName] ?? 0) + item.quantity;
+        }
+      } else {
+        final itemName = sale.itemName ?? 'Unknown';
+        final quantity = sale.quantity ?? 0;
+        topSellingItems[itemName] = (topSellingItems[itemName] ?? 0) + quantity;
+      }
+    }
+
+    // Sort by quantity and take top items
+    final sortedItems = topSellingItems.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
     final weekRevenue = thisWeekSales.fold(
       0.0,
       (sum, sale) => sum + sale.totalAmount,
@@ -259,20 +303,63 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
 
           const SizedBox(height: 32),
 
-          // Top Selling Items
-          const Text(
-            'Top Selling Items',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          // Top Selling Items with Time Period Filter
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Top Selling Items',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  ),
+                ),
+                child: DropdownButton<String>(
+                  value: _selectedTimePeriod,
+                  underline: const SizedBox(),
+                  isDense: true,
+                  icon: Icon(
+                    Icons.arrow_drop_down,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Today', child: Text('Today')),
+                    DropdownMenuItem(value: 'This Week', child: Text('This Week')),
+                    DropdownMenuItem(value: 'This Month', child: Text('This Month')),
+                    DropdownMenuItem(value: 'This Year', child: Text('This Year')),
+                    DropdownMenuItem(value: 'All Time', child: Text('All Time')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTimePeriod = value;
+                      });
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
-          if (topSellingItems.isEmpty)
+          if (sortedItems.isEmpty)
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(24),
                 child: Center(
                   child: Text(
-                    'No sales data available yet',
+                    'No sales data available for this period',
                     style: TextStyle(fontSize: 16, color: Colors.grey),
                   ),
                 ),
@@ -283,7 +370,7 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  children: topSellingItems.entries
+                  children: sortedItems
                       .take(5)
                       .map((entry) => _buildTopItemRow(entry.key, entry.value))
                       .toList(),
