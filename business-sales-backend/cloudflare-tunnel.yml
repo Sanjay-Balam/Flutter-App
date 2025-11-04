@@ -1,0 +1,23 @@
+# Cloudflare Tunnel Configuration
+# This file configures the tunnel to route traffic from your domain to your local backend
+
+# Tunnel will be configured after authentication
+# tunnel: YOUR_TUNNEL_ID
+# credentials-file: /Users/balamsanjay/.cloudflared/YOUR_TUNNEL_ID.json
+
+# Ingress rules - define how traffic should be routed
+ingress:
+  # Route all traffic to your local backend on port 3000
+  - service: http://localhost:3000
+    # Optional: Add origin server name for SNI
+    # hostname: api.yourdomain.com
+    
+  # Catch-all rule (required by cloudflare)
+  - service: http_status:404
+
+# Optional: Origin request settings
+# originRequest:
+#   connectTimeout: 30s
+#   noTLSVerify: false
+#   httpHostHeader: localhost
+
