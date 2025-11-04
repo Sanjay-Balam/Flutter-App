@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 /// Centralized configuration for the Flutter app
 /// This file contains all app-wide constants and settings
 class AppConfig {
@@ -12,25 +10,26 @@ class AppConfig {
 
   /// Base URL for the backend API
   /// Switch between local and deployed backend
-  // static const String baseUrl = 'https://flutter-app-1o90.onrender.com';
+  static const String baseUrl = 'https://prd.buildnweb.in';
 
+  /// Use local development URL (uncomment for local testing)
   /// Get base URL based on platform
   /// - Android emulator: use 10.0.2.2 (emulator's host machine)
   /// - iOS simulator: use localhost
   /// - Web/Desktop: use localhost
-  static String get baseUrl {
-    try {
-      if (Platform.isAndroid) {
-        // Android emulator uses 10.0.2.2 to access host machine
-        return 'http://10.0.2.2:3000';
-      }
-      // iOS simulator, web, and desktop can use localhost
-      return 'http://localhost:3000';
-    } catch (e) {
-      // Fallback for web (Platform is not available)
-      return 'http://localhost:3000';
-    }
-  }
+  // static String get baseUrl {
+  //   try {
+  //     if (Platform.isAndroid) {
+  //       // Android emulator uses 10.0.2.2 to access host machine
+  //       return 'http://10.0.2.2:3000';
+  //     }
+  //     // iOS simulator, web, and desktop can use localhost
+  //     return 'http://localhost:3000';
+  //   } catch (e) {
+  //     // Fallback for web (Platform is not available)
+  //     return 'http://localhost:3000';
+  //   }
+  // }
 
   /// Database name used in API endpoints
   static const String database = 'DemoDB';
@@ -77,7 +76,7 @@ class AppConfig {
   // ==========================================================================
 
   /// Current environment (development, staging, production)
-  static const AppEnvironment environment = AppEnvironment.development;
+  static const AppEnvironment environment = AppEnvironment.production;
 
   /// Enable debug mode (shows debug information)
   static bool get isDebugMode => environment == AppEnvironment.development;
@@ -218,7 +217,7 @@ class EnvironmentConfig {
       'enableDebugMode': false,
     },
     AppEnvironment.production: {
-      'baseUrl': 'https://business-sales-backend.onrender.com',
+      'baseUrl': 'https://prd.buildnweb.in',
       'database': 'DemoDB',
       'enableLogging': false,
       'enableDebugMode': false,
