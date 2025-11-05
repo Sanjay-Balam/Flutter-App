@@ -90,4 +90,4 @@ MenuItemSchema.index({ name: 'text', description: 'text' });
 MenuItemSchema.index({ category: 1 });
 
 
-export default mongoose.model<IMenuItem>('MenuItems', MenuItemSchema); 
+export default mongoose.model<IMenuItem>('MenuItems', MenuItemSchema, 'MenuItems'); 

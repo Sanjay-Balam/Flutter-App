@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'providers/auth_provider.dart';
 
 void main() {
   runApp(const ProviderScope(child: BusinessSalesApp()));
@@ -51,8 +53,35 @@ class BusinessSalesApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const AuthGate(),
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+/// Authentication gate that shows login or home based on auth state
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+
+    // Show loading spinner while checking auth
+    if (authState.isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Show login if not authenticated
+    if (!authState.isAuthenticated) {
+      return const LoginScreen();
+    }
+
+    // Show home if authenticated
+    return const HomeScreen();
   }
 }

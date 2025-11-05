@@ -80,5 +80,5 @@ StockHistorySchema.index({ userId: 1, createdAt: -1 }); // Get user's stock hist
 StockHistorySchema.index({ movementType: 1 }); // Filter by movement type
 StockHistorySchema.index({ createdAt: -1 }); // Sort by date
 
-export default mongoose.model<IStockHistory>('StockHistory', StockHistorySchema);
+export default mongoose.model<IStockHistory>('StockHistory', StockHistorySchema, 'StockHistory');
 

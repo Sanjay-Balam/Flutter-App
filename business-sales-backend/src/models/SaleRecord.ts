@@ -225,4 +225,4 @@ SaleRecordSchema.index({
   totalAmount: 1 
 });
 
-export default mongoose.model<ISaleRecord>('SaleRecords', SaleRecordSchema); 
+export default mongoose.model<ISaleRecord>('SaleRecords', SaleRecordSchema, 'SaleRecords'); 

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, type InferSchemaType } from 'mongoose';
+import bcrypt from 'bcrypt';
 
 const UserSchema = new Schema({
   firstName: {
@@ -90,8 +91,10 @@ const UserSchema = new Schema({
   timestamps: true,
   toJSON: {
     transform: function(doc: any, ret: any) {
-      ret.id = ret.id || ret._id.toString();
-      delete ret._id;
+      if (ret._id) {
+        ret.id = ret._id.toString();
+        delete ret._id;
+      }
       delete ret.__v;
       delete ret.password; // Never include password in JSON output
       return ret;
@@ -123,10 +126,9 @@ UserSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
-    // In a real app, you'd use bcrypt here
-    // For now, we'll just store it as is (NOT recommended for production)
-    // const bcrypt = require('bcrypt');
-    // this.password = await bcrypt.hash(this.password, 12);
+    // Hash password with bcrypt (salt rounds: 12)
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error: any) {
     next(error);
@@ -135,9 +137,7 @@ UserSchema.pre('save', async function(next) {
 
 // Instance method to compare password
 UserSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
-  // In a real app, you'd use bcrypt here
-  // return await bcrypt.compare(candidatePassword, this.password);
-  return candidatePassword === this.password;
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model<IUser>('Users', UserSchema);
+export default mongoose.model<IUser>('Users', UserSchema, 'Users');

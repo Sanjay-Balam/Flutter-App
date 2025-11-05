@@ -5,6 +5,7 @@ import Database from './src/config/database';
 import { searchRoutes } from './src/routes/searchRoutes';
 import invoiceRoutes from './src/routes/invoice.routes';
 import transactionRoutes from './src/routes/transaction.routes';
+import { authRoutes } from './src/routes/auth.routes';
 
 // Initialize database connection
 await Database.connect();
@@ -28,6 +29,10 @@ const app = new Elysia()
       },
       tags: [
         {
+          name: 'Auth',
+          description: 'Authentication and user management endpoints'
+        },
+        {
           name: 'Search',
           description: 'Universal search and CRUD endpoints for all collections'
         },
@@ -43,7 +48,16 @@ const app = new Elysia()
           name: 'Business Analytics',
           description: 'Specialized business analytics and reporting endpoints'
         }
-      ]
+      ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT'
+          }
+        }
+      }
     }
   }))
 
@@ -55,6 +69,12 @@ const app = new Elysia()
     timestamp: new Date().toISOString(),
           endpoints: {
         documentation: '/swagger',
+        auth: {
+          register: '/api/auth/register',
+          login: '/api/auth/login',
+          profile: '/api/auth/me',
+          verify: '/api/auth/verify'
+        },
         search: '/api/v1/search',
         invoices: '/api/{database}/generate-invoice/{saleId}',
         businessAnalytics: '/api/v1/search/{database}/business-analytics',
@@ -70,6 +90,9 @@ const app = new Elysia()
     database: Database.getConnectionStatus() ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   }))
+
+  // Authentication routes (public)
+  .use(authRoutes)
 
   // API routes with versioning
   .group('', (app) => 

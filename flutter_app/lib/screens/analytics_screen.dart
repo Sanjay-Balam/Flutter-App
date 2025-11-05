@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/sale_record.dart';
 import '../models/menu_item.dart';
 import '../providers/sales_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/date_range_picker_dialog.dart';
 import '../services/pdf_export_service.dart';
 
@@ -32,6 +33,31 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _handleLogout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      await ref.read(authProvider.notifier).logout();
+      // Navigation will be handled automatically by AuthGate
+    }
   }
 
   @override
@@ -83,6 +109,50 @@ class _AnalyticsScreenState extends ConsumerState<AnalyticsScreen>
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.read(salesProvider.notifier).refresh();
+            },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Profile',
+            onSelected: (value) {
+              if (value == 'logout') {
+                _handleLogout();
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              final user = ref.read(currentUserProvider);
+              return [
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user?.fullName ?? 'User',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        user?.email ?? '',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem<String>(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 20),
+                      SizedBox(width: 8),
+                      Text('Logout'),
+                    ],
+                  ),
+                ),
+              ];
             },
           ),
         ],

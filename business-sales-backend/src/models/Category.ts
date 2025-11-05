@@ -55,4 +55,4 @@ CategorySchema.index({ name: 'text', description: 'text' }); // Text search
 
 
 
-export default mongoose.model<ICategory>('Categories', CategorySchema);
+export default mongoose.model<ICategory>('Categories', CategorySchema, 'Categories');
